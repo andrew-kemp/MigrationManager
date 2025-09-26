@@ -359,7 +359,7 @@ $form.Controls.AddRange(@(
     $btnConnect,
     $txtStatus
 ))
-
+$form.AcceptButton = $btnConnect
 $txtPfxPath.Add_TextChanged({ $defaults["CertPath"]    = $txtPfxPath.Text;    Write-Ini $iniFile $defaults })
 $txtTenantName.Add_TextChanged({ $defaults["TenantName"] = $txtTenantName.Text; Write-Ini $iniFile $defaults })
 $txtAppId.Add_TextChanged({ $defaults["AppId"] = $txtAppId.Text; Write-Ini $iniFile $defaults })
@@ -367,6 +367,44 @@ $txtTenantId.Add_TextChanged({ $defaults["TenantId"] = $txtTenantId.Text; Write-
 $txtTapGroup.Add_TextChanged({ $defaults["tap_group_objectid"] = $txtTapGroup.Text; Write-Ini $iniFile $defaults })
 
 # --- Batch Form & All Logic ---
+function Update-UserBatchEntry {
+    param([string]$logFile, [string]$batchName, [string]$email, [hashtable]$updates)
+    # Find and update the user's line in the log file
+    if (!(Test-Path $logFile)) { return }
+    $lines = Get-Content $logFile
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $parts = $lines[$i] -split ","
+        if ($parts.Count -ge 7 -and $parts[1] -eq $batchName -and $parts[2] -eq $email) {
+            foreach ($key in $updates.Keys) {
+                $colIdx = @{Status=3; AddedToGroup=4; TAPSet=5; TAPSent=6}[$key]
+                $parts[$colIdx] = $updates[$key]
+            }
+            $lines[$i] = $parts -join ","
+            break
+        }
+    }
+    Set-Content $logFile $lines
+}
+
+function Get-BatchUsersFromLog {
+    param([string]$logFile, [string]$batchName)
+    $users = @{}
+    if ((Test-Path $logFile) -and $batchName) {
+        foreach ($line in Get-Content $logFile) {
+            $parts = $line -split ","
+            if ($parts.Count -ge 7 -and $parts[1] -eq $batchName) {
+                $users[$parts[2]] = @{
+                    Status = $parts[3]
+                    AddedToGroup = $parts[4]
+                    TAPSet = $parts[5]
+                    TAPSent = $parts[6]
+                }
+            }
+        }
+    }
+    return $users
+}
+
 function Show-BatchForm {
     param($iniFile, $logFile, $defaults, $batchToLoad)
     $batchForm = New-Object System.Windows.Forms.Form
@@ -398,7 +436,7 @@ function Show-BatchForm {
     $btnAddManual.Size = New-Object System.Drawing.Size(100,28)
 
     $lblUsers = New-Object System.Windows.Forms.Label
-    $lblUsers.Text = "Users in Batch (Email, Status, TAP Set, Added to Group, TAP Sent):"
+    $lblUsers.Text = "Users in Batch (Email, Status, Added to Group, TAP Set, TAP Sent):"
     $lblUsers.Location = New-Object System.Drawing.Point(20,125)
     $lblUsers.Size = New-Object System.Drawing.Size(600,20)
 
@@ -408,8 +446,8 @@ function Show-BatchForm {
     $lstUsers.View = [System.Windows.Forms.View]::Details
     $lstUsers.Columns.Add("Email",340) | Out-Null
     $lstUsers.Columns.Add("Status",120) | Out-Null
-    $lstUsers.Columns.Add("TAP Set",80) | Out-Null
     $lstUsers.Columns.Add("Added to Group",110) | Out-Null
+    $lstUsers.Columns.Add("TAP Set",80) | Out-Null
     $lstUsers.Columns.Add("TAP Sent",100) | Out-Null
     $lstUsers.FullRowSelect = $true
     $lstUsers.HideSelection = $false
@@ -476,20 +514,25 @@ function Show-BatchForm {
     $btnLoadBatch.Location = New-Object System.Drawing.Point(420,686)
     $btnLoadBatch.Size = New-Object System.Drawing.Size(100,24)
 
-    # --- Helper Functions for Batch Form ---
     function Refresh-ListView {
         param($batchName)
         $lstUsers.Items.Clear()
         $users = Get-BatchUsersFromLog $logFile $batchName
-        foreach ($u in $users) {
-            $item = New-Object System.Windows.Forms.ListViewItem ($u.Email)
-            $item.SubItems.Add($u.Status) | Out-Null
-            $item.SubItems.Add("") | Out-Null # TAP Set
-            $item.SubItems.Add("") | Out-Null # Added to Group
-            $item.SubItems.Add("") | Out-Null # TAP Sent
-            if ($u.Status -eq "queued")   { $item.SubItems[1].ForeColor = [System.Drawing.Color]::Orange }
-            elseif ($u.Status -eq "migrated") { $item.SubItems[1].ForeColor = [System.Drawing.Color]::Green }
-            elseif ($u.Status -eq "failed")   { $item.SubItems[1].ForeColor = [System.Drawing.Color]::Red }
+        foreach ($email in $users.Keys) {
+            $info = $users[$email]
+            $item = New-Object System.Windows.Forms.ListViewItem ($email)
+            $item.SubItems.Add($info.Status) | Out-Null
+            $item.SubItems.Add($info.AddedToGroup) | Out-Null
+            $item.SubItems.Add($info.TAPSet) | Out-Null
+            $item.SubItems.Add($info.TAPSent) | Out-Null
+            # Color for status
+            if ($info.Status -eq 'In Progress') {
+                $item.SubItems[1].ForeColor = [System.Drawing.Color]::Orange
+            } elseif ($info.Status -eq 'Completed') {
+                $item.SubItems[1].ForeColor = [System.Drawing.Color]::Green
+            } elseif ($info.Status -eq 'Failed') {
+                $item.SubItems[1].ForeColor = [System.Drawing.Color]::Red
+            }
             $lstUsers.Items.Add($item)
         }
     }
@@ -537,13 +580,13 @@ function Show-BatchForm {
             $emails = $emails | Where-Object { $_ -and $_ -match "@" }
             $curBatch = EnsureBatchName
             $added = 0
+            $users = Get-BatchUsersFromLog $logFile $curBatch
             foreach ($e in $emails) {
-                $already = $false
-                foreach ($item in $lstUsers.Items) {
-                    if ($item.Text -eq $e) { $already = $true }
-                }
-                if (-not $already -and $curBatch) {
-                    Log-AddUser $curBatch $e
+                if (-not $users.ContainsKey($e) -and $curBatch) {
+                    $dt = Get-Date -Format "yyyy-MM-dd HH:mm"
+                    # Not Started initially
+                    $line = "$dt,$curBatch,$e,Not Started,No,No,No"
+                    Add-Content -Path $logFile -Value $line
                     $added++
                 }
             }
@@ -559,15 +602,14 @@ function Show-BatchForm {
         $block = $txtManual.Text
         $curBatch = EnsureBatchName
         $added = 0
+        $users = Get-BatchUsersFromLog $logFile $curBatch
         if ($block -and $curBatch) {
             $emails = $block -split "[,`n`r]" | ForEach-Object { $_.Trim() } | Where-Object { $_ -and $_ -match "@" }
             foreach ($e in $emails) {
-                $already = $false
-                foreach ($item in $lstUsers.Items) {
-                    if ($item.Text -eq $e) { $already = $true }
-                }
-                if (-not $already) {
-                    Log-AddUser $curBatch $e
+                if (-not $users.ContainsKey($e)) {
+                    $dt = Get-Date -Format "yyyy-MM-dd HH:mm"
+                    $line = "$dt,$curBatch,$e,Not Started,No,No,No"
+                    Add-Content -Path $logFile -Value $line
                     $added++
                 }
             }
@@ -620,108 +662,32 @@ function Show-BatchForm {
             return
         }
 
-        # --- GROUP CONFIRMATION DIALOG ---
-        $inputBox = New-Object System.Windows.Forms.Form
-        $inputBox.Text = "Confirm Passkey Group ObjectID"
-        $inputBox.Size = New-Object System.Drawing.Size(500, 320)
+        $groupObjectId = $defaults["tap_group_objectid"]
+        if (-not $groupObjectId) {
+            [System.Windows.Forms.MessageBox]::Show("No group ObjectId specified. Please enter the TAP group ObjectId in the main form first.")
+            return
+        }
 
-        $lbl = New-Object System.Windows.Forms.Label
-        $lbl.Text = "Group ObjectID or Name:"
-        $lbl.Location = New-Object System.Drawing.Point(10, 20)
-        $lbl.Size = New-Object System.Drawing.Size(160, 20)
-
-        $txt = New-Object System.Windows.Forms.TextBox
-        $txt.Size = New-Object System.Drawing.Size(280, 24)
-        $txt.Location = New-Object System.Drawing.Point(170, 18)
-        $txt.Text = $defaults["tap_group_objectid"]
-
-        $okBtn = New-Object System.Windows.Forms.Button
-        $okBtn.Text = "Confirm"
-        $okBtn.Location = New-Object System.Drawing.Point(120, 60)
-
-        $closeBtn = New-Object System.Windows.Forms.Button
-        $closeBtn.Text = "Close"
-        $closeBtn.Location = New-Object System.Drawing.Point(220, 60)
-
-        $txtGroupLog = New-Object System.Windows.Forms.TextBox
-        $txtGroupLog.Location = New-Object System.Drawing.Point(20, 100)
-        $txtGroupLog.Size = New-Object System.Drawing.Size(440, 170)
-        $txtGroupLog.Multiline = $true
-        $txtGroupLog.ScrollBars = "Vertical"
-        $txtGroupLog.ReadOnly = $true
-
-        $inputBox.Controls.AddRange(@($lbl, $txt, $okBtn, $closeBtn, $txtGroupLog))
-
-        $ok = $false
-        $script:confirmedGroupObjectId = $null
-
-        $okBtn.Add_Click({
-            $txtGroupLog.Clear()
-            $groupInput = $txt.Text.Trim()
-            $txtGroupLog.AppendText("Looking up group: $groupInput`r`n")
-            try {
-                $groupObj = $null
-                # Try ObjectId first
-                $groupObj = Get-MgGroup -GroupId $groupInput -ErrorAction SilentlyContinue
-                if (-not $groupObj) {
-                    $groups = Get-MgGroup -Filter "displayName eq '$groupInput'"
-                    if ($groups.Count -eq 1) {
-                        $groupObj = $groups[0]
-                    } elseif ($groups.Count -gt 1) {
-                        $txtGroupLog.AppendText("Multiple groups found with name '$groupInput'. Please use ObjectId.`r`n")
-                        return
-                    }
-                }
-                if ($groupObj) {
-                    $txtGroupLog.AppendText("Group Found:`r`n")
-                    $txtGroupLog.AppendText("Display Name: $($groupObj.DisplayName)`r`n")
-                    $txtGroupLog.AppendText("ObjectId: $($groupObj.Id)`r`n")
-                    $txtGroupLog.AppendText("Type: $($groupObj.GroupTypes -join ', ')`r`n")
-                    $txtGroupLog.AppendText("Mail: $($groupObj.Mail)`r`n")
-                    if ($groupObj.MembershipRule) {
-                        $txtGroupLog.AppendText("MembershipRule: $($groupObj.MembershipRule)`r`n")
-                    }
-                    $txtGroupLog.AppendText("`r`n")
-                    $script:confirmedGroupObjectId = $groupObj.Id
-                    $ok = $true
-                    Start-Sleep -Seconds 10
-                    $inputBox.Close()
-                } else {
-                    $txtGroupLog.AppendText("Group '$groupInput' not found!`r`n")
-                }
-            } catch {
-                $txtGroupLog.AppendText("Error retrieving group info: $($_.Exception.Message)`r`n")
-            }
-        })
-
-        $closeBtn.Add_Click({ $inputBox.Close() })
-
-        $inputBox.ShowDialog()
-        if (-not $ok) { return }
-
-        $groupObjectId = $script:confirmedGroupObjectId
-        $defaults["tap_group_objectid"] = $groupObjectId
-        Write-Ini $iniFile $defaults
-
-        # --- Confirmation dialog before proceeding ---
-        $userList = ($lstUsers.SelectedItems | ForEach-Object { $_.Text }) -join "`r`n"
-        $tapHours = 24
-        $maxTAP = 1440
+        # --- TAP Lifetime Calculation ---
+        $requestedTap = 1440   # 24 hours
+        $defaultTap = 480      # Default to 8 hours
+        $minTap = 60
+        $maxTap = 480
         try {
             $policy = Get-MgPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -AuthenticationMethodConfigurationId "TemporaryAccessPass"
-            if ($policy.maximumLifetimeInMinutes) {
-                $maxTAP = [math]::Min($maxTAP, [int]$policy.maximumLifetimeInMinutes)
-            }
-        } catch {
-            $maxTAP = 1440
-        }
-        if ($maxTAP -eq 0) { $maxTAP = 60 }
-        $tapHours = [math]::Round($maxTAP/60,0)
+            if ($policy.maximumLifetimeInMinutes) { $maxTap = [int]$policy.maximumLifetimeInMinutes }
+            if ($policy.minimumLifetimeInMinutes) { $minTap = [int]$policy.minimumLifetimeInMinutes }
+        } catch {}
+        if ($requestedTap -gt $maxTap) { $tapMinutes = $maxTap }
+        elseif ($requestedTap -lt $minTap) { $tapMinutes = $minTap }
+        else { $tapMinutes = $requestedTap }
+        $tapHours = [math]::Floor($tapMinutes / 60)
+
+        $userList = ($lstUsers.SelectedItems | ForEach-Object { $_.Text }) -join "`r`n"
         $msg = "You are about to add the following users to group:`r`n$userList`r`nGroup ID: $groupObjectId`r`nTAP validity: $tapHours hours`r`nProceed?"
         $result = [System.Windows.Forms.MessageBox]::Show($msg, "Confirm Add to Group", [System.Windows.Forms.MessageBoxButtons]::YesNo)
         if ($result -ne [System.Windows.Forms.DialogResult]::Yes) { return }
 
-        # --- Progress form for live status ---
         $progressForm = New-Object System.Windows.Forms.Form
         $progressForm.Text = "Processing TAP and Group Add"
         $progressForm.Size = New-Object System.Drawing.Size(600,400)
@@ -733,12 +699,14 @@ function Show-BatchForm {
         $progressForm.Controls.Add($txtProgress)
         $progressForm.Show()
 
+        $curBatch = $txtBatchName.Text
+
         foreach ($sel in $lstUsers.SelectedItems) {
             $userEmail = $sel.Text
-            $dt = Get-Date -Format "yyyy-MM-dd HH:mm"
-            $batchName = $txtBatchName.Text
+            # Mark as In Progress
+            Update-UserBatchEntry $logFile $curBatch $userEmail @{Status='In Progress'}
+            Refresh-ListView $curBatch
             $txtProgress.AppendText("Processing $userEmail...`r`n")
-            # Get user object ID and names
             try {
                 $txtProgress.AppendText("Fetching user object...`r`n")
                 $userObj = Get-MgUser -UserId $userEmail
@@ -758,15 +726,15 @@ function Show-BatchForm {
             } catch {
                 $errMsg = $_.Exception.Message
                 $txtProgress.AppendText("Could not find user: ${userEmail}: $errMsg`r`n")
+                Update-UserBatchEntry $logFile $curBatch $userEmail @{Status='Failed'}
+                Refresh-ListView $curBatch
                 continue
             }
-            # Resolve user objectId from UPN/email
             $userObj = Get-MgUser -Filter "userPrincipalName eq '$userEmail'"
             if (!$userObj) {
                 $txtProgress.AppendText("User $userEmail not found in Entra/Azure AD.`r`n")
-                $sel.SubItems[3].Text = "Not found"
-                $sel.SubItems[3].ForeColor = [System.Drawing.Color]::Red
-                Add-Content -Path $logFile -Value "$dt,${batchName},${userEmail},User not found"
+                Update-UserBatchEntry $logFile $curBatch $userEmail @{Status='Failed'}
+                Refresh-ListView $curBatch
                 continue
             }
             $userId = $userObj.Id
@@ -778,6 +746,7 @@ function Show-BatchForm {
                 New-MgGroupMember -GroupId $groupObjectId -DirectoryObjectId $userId -ErrorAction Stop
                 $addedToGroup = $true
                 $txtProgress.AppendText("Added to group.`r`n")
+                Update-UserBatchEntry $logFile $curBatch $userEmail @{AddedToGroup='Yes'}
             } catch {
                 $errMsg = $_.Exception.Message
                 if ($errMsg -notmatch "added object references already exist" -and $errMsg -notmatch "One or more added object references already exist") {
@@ -785,12 +754,8 @@ function Show-BatchForm {
                 } else {
                     $addedToGroup = $true
                     $txtProgress.AppendText("Already a member of group.`r`n")
+                    Update-UserBatchEntry $logFile $curBatch $userEmail @{AddedToGroup='Yes'}
                 }
-            }
-            if ($addedToGroup) {
-                Add-Content -Path $logFile -Value "$dt,${batchName},${userEmail},Added to Group"
-                $sel.SubItems[3].Text = "Yes"
-                $sel.SubItems[3].ForeColor = [System.Drawing.Color]::DarkGreen
             }
 
             # Create TAP
@@ -799,19 +764,18 @@ function Show-BatchForm {
                 $txtProgress.AppendText("Generating TAP for $tapHours hours...`r`n")
                 $tapMethod = New-MgUserAuthenticationTemporaryAccessPassMethod `
                     -UserId $userId `
-                    -BodyParameter @{lifetimeInMinutes=$maxTAP; isUsableOnce=$true}
+                    -BodyParameter @{lifetimeInMinutes=$tapMinutes; isUsableOnce=$true}
                 $tap = $tapMethod.TemporaryAccessPass
-                Add-Content -Path $logFile -Value "$dt,${batchName},${userEmail},TAP Set"
-                $sel.SubItems[2].Text = "Yes"
-                $sel.SubItems[2].ForeColor = [System.Drawing.Color]::DodgerBlue
+                Update-UserBatchEntry $logFile $curBatch $userEmail @{TAPSet='Yes'}
                 $tapCreated = $true
                 $txtProgress.AppendText("TAP created.`r`n")
             } catch {
                 $errMsg = $_.Exception.Message
                 $txtProgress.AppendText("Error creating TAP for ${userEmail}: $errMsg`r`n")
+                Update-UserBatchEntry $logFile $curBatch $userEmail @{Status='Failed'}
+                Refresh-ListView $curBatch
                 continue
             }
-            # Prepare HTML email
             $templatePath = "TAP_Email_Template.html"
             if (-not (Test-Path $templatePath)) {
                 $txtProgress.AppendText("Email template not found: ${templatePath}`r`n")
@@ -823,7 +787,6 @@ function Show-BatchForm {
             $html = $html -replace "\{TAP\}", $tap
             $html = $html -replace "\{TAP_HOURS\}", $tapHours
 
-            # Send email
             if ($tapCreated) {
                 try {
                     $txtProgress.AppendText("Emailing TAP to $userEmail...`r`n")
@@ -838,20 +801,24 @@ function Show-BatchForm {
                         }
                         saveToSentItems = $false
                     }
-                    Add-Content -Path $logFile -Value "$dt,${batchName},${userEmail},TAP sent"
-                    $sel.SubItems[4].Text = "Yes"
-                    $sel.SubItems[4].ForeColor = [System.Drawing.Color]::Blue
+                    Update-UserBatchEntry $logFile $curBatch $userEmail @{TAPSent='Yes'}
                     $txtProgress.AppendText("Email sent to $userEmail.`r`n")
                 } catch {
                     $errMsg = $_.Exception.Message
-                    $txtProgress.AppendText("Could not send email to ${userEmail}: $errMsg`r`n")
-                    continue
+                    if ($errMsg -like "*MailboxNotEnabledForRESTAPI*") {
+                        $txtProgress.AppendText("User $userEmail does not have an Exchange Online mailbox. Skipped email.`r`n")
+                    } else {
+                        $txtProgress.AppendText("Could not send email to ${userEmail}: $errMsg`r`n")
+                    }
                 }
             }
+            Update-UserBatchEntry $logFile $curBatch $userEmail @{Status='Completed'}
+            Refresh-ListView $curBatch
             $txtProgress.AppendText("Done for $userEmail.`r`n`r`n")
         }
         $txtProgress.AppendText("All done!`r`n")
         $lblSaved.Text = "TAP sent for selected users and recorded."
+        Refresh-ListView $curBatch
     })
 
     $batchForm.Add_Shown({
@@ -873,7 +840,6 @@ function Show-BatchForm {
 
     [void]$batchForm.ShowDialog()
 }
-
 # --- Main Connect Logic and Script Launcher ---
 $btnConnect.Add_Click({
     $txtStatus.Text = ""
