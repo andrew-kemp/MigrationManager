@@ -1,6 +1,6 @@
 # EXO/Graph Service Principal Auth Tool
 
-This PowerShell WinForms GUI helps you manage user TAP (Temporary Access Pass) creation, group membership, and notification for Microsoft Entra ID (formerly Azure AD) and Exchange Online. It uses a Service Principal (App Registration) with certificate authentication for secure, automated, app-only access.
+This PowerShell WinForms GUI helps you manage user TAP (Temporary Access Pass) creation, group membership, and notification for Microsoft Entra ID and Exchange Online. It uses a Service Principal (App Registration) with certificate authentication for secure, automated, app-only access.
 
 ---
 
@@ -12,6 +12,7 @@ This PowerShell WinForms GUI helps you manage user TAP (Temporary Access Pass) c
 - Generates Temporary Access Passes (TAP) for users
 - Sends customized email notifications to users with their TAP
 - Visual, interactive status and log reporting
+- Migration Manager: Enables mailbox migration and onboarding flows after TAP is used
 
 ---
 
@@ -74,20 +75,27 @@ Grant these permissions (admin consent required):
 **Important:**  
 When adding your application to Exchange Online's "Organization Management" role group, use the **Object ID from the Microsoft Entra Enterprise Application** (service principal), _not_ the App Registration's Object ID.
 
-- Go to **Exchange Admin Center > Permissions > Admin Roles**
-- Edit the **Organization Management** role group
-- Add your **App Registration (Enterprise Application)** as a member  
-  *(Use the Object ID from Microsoft Entra admin center > Enterprise Applications > [Your App] > Overview)*
+#### PowerShell Steps
 
-Or, use PowerShell (recommended):
+1. **Find your App IDs in Microsoft Entra admin center:**
+   - **Application (client) ID** from App Registrations
+   - **Enterprise Application Object ID** from Enterprise Applications
 
-```powershell
-# Connect to Exchange Online
-Connect-ExchangeOnline
+2. **Register the Service Principal in Exchange Online:**
+   - You must supply both the **AppId** and the **ServiceId (Enterprise App Object ID)**:
+     ```powershell
+     Connect-ExchangeOnline
+     New-ServicePrincipal -AppId <application-client-id> -ServiceId <enterprise-app-object-id>
+     ```
+     Example:
+     ```powershell
+     New-ServicePrincipal -AppId 95b0f7c3-1f74-423c-9b50-7e1cf5b29eb5 -ServiceId 011afdf8-84cb-44cb-af6c-08a71e7c3bdf
+     ```
 
-# Add the Enterprise Application Object ID to Organization Management
-Add-RoleGroupMember -Identity "Organization Management" -Member <enterprise-app-object-id>
-```
+3. **Add the Service Principal to Organization Management:**
+    ```powershell
+    Add-RoleGroupMember -Identity "Organization Management" -Member <enterprise-app-object-id>
+    ```
 
 ---
 
@@ -95,6 +103,58 @@ Add-RoleGroupMember -Identity "Organization Management" -Member <enterprise-app-
 
 - Ensure Conditional Access policies do **not** block app-only authentication for the App Registration.
 - Exclude the App from policies requiring MFA, compliant device, or blocking service principals.
+
+---
+
+## Migration Manager Workflow
+
+1. **Assign Service Principal Permissions:**  
+   Follow the steps above to ensure Migration Manager can operate using app-only authentication.
+
+2. **Send TAP Email:**  
+   Migration Manager generates and sends TAP emails to users, enabling secure initial sign-in and passkey setup.
+
+3. **Enable User Migration:**  
+   Once users have signed in and set up with TAP, Migration Manager can migrate their Exchange Online mailboxes automatically.
+
+---
+
+## TAP Email Template Example
+
+Migration Manager sends users a TAP email with setup instructions:
+
+```html
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .tap { font-size: 1.3em; font-weight: bold; color: #1976d2; }
+    .instructions { margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <p>Dear {FirstName} {LastName},</p>
+  <p>Your Temporary Access Pass (TAP) is:</p>
+  <div class="tap">{TAP}</div>
+  <p>
+    This TAP is <b>valid for up to {TAP_HOURS} hour(s)</b> or until first use, whichever comes first.<br>
+    <i>If your organisation's policy is shorter, it will expire sooner.</i>
+  </p>
+  <div class="instructions">
+    <strong>To set up your Passkey:</strong>
+    <ol>
+      <li>Go to <a href="https://myaccount.microsoft.com/">https://myaccount.microsoft.com/</a> and sign in.</li>
+      <li>Go to <b>Security info</b>.</li>
+      <li>Click <b>Add method</b> and choose <b>Passkey</b>.</li>
+      <li>Enter your TAP code when prompted: <b>{TAP}</b></li>
+      <li>Follow the instructions to set up your Passkey.</li>
+    </ol>
+  </div>
+  <p>If you need assistance, please contact IT support.</p>
+  <p>Best regards,<br/>Your IT Team</p>
+</body>
+</html>
+```
 
 ---
 
