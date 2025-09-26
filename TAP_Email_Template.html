@@ -4,6 +4,8 @@
     body { font-family: Arial, sans-serif; }
     .tap { font-size: 1.3em; font-weight: bold; color: #1976d2; }
     .instructions { margin-top: 18px; }
+    .section { margin-bottom: 24px; }
+    h2 { color: #1976d2; }
   </style>
 </head>
 <body>
@@ -14,17 +16,32 @@
     This TAP is <b>valid for up to {TAP_HOURS} hour(s)</b> or until first use, whichever comes first.<br>
     <i>If your organisation's policy is shorter, it will expire sooner.</i>
   </p>
-  <div class="instructions">
-    <strong>To set up your Passkey:</strong>
+
+  <div class="section">
+    <h2>1. Passkey Setup Instructions for New Users</h2>
+    <p>To set up your Passkey using the Microsoft Authenticator app on your mobile device:</p>
     <ol>
-      <li>Go to <a href="https://myaccount.microsoft.com/">https://myaccount.microsoft.com/</a> and sign in.</li>
-      <li>Go to <b>Security info</b>.</li>
-      <li>Click <b>Add method</b> and choose <b>Passkey</b>.</li>
-      <li>Enter your TAP code when prompted: <b>{TAP}</b></li>
-      <li>Follow the instructions to set up your Passkey.</li>
+      <li>Download and install the <b>Microsoft Authenticator</b> app from your device's app store.</li>
+      <li>Open the app and tap <b>+ (Add Account)</b> or choose <b>Passkey</b> if shown.</li>
+      <li>Choose <b>Work or school account</b>.</li>
+      <li>When prompted, enter your Temporary Access Pass (TAP) code: <b>{TAP}</b></li>
+      <li>Follow the instructions in the app to complete your Passkey setup.</li>
     </ol>
   </div>
-  <p>If you need assistance, please contact IT support.</p>
-  <p>Best regards,<br/>Your IT Team</p>
+
+  <div class="section">
+    <h2>2. Add a Passkey (For Users Already Using MFA)</h2>
+    <p>If you already have Multi-Factor Authentication (MFA) set up, follow these steps to add a Passkey using the Microsoft Authenticator app:</p>
+    <ol>
+      <li>Open the <b>Microsoft Authenticator</b> app on your mobile device.</li>
+      <li>Tap <b>+ (Add Account)</b> or select <b>Passkey</b> if shown.</li>
+      <li>Select <b>Work or school account</b>.</li>
+      <li>When prompted, enter your Temporary Access Pass (TAP) code: <b>{TAP}</b></li>
+      <li>Complete the Passkey setup as guided by the app.</li>
+    </ol>
+  </div>
+
+  <p>If you need assistance, please contact the <b>Migration Management Team</b>.</p>
+  <p>Best regards,<br/>Migration Management Team</p>
 </body>
 </html>
