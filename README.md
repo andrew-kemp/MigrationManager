@@ -1,132 +1,99 @@
-# EXO/Graph Service Principal Auth Tool
+# Granting Exchange Online Admin Permissions to an Azure AD App Registration (Service Principal)
 
-This PowerShell WinForms GUI helps you manage user TAP (Temporary Access Pass) creation, group membership, and notification for Microsoft Entra ID (Azure AD) and Exchange Online. It uses a Service Principal (App Registration) with certificate authentication for secure, automated, app-only access.
-
----
-
-## Features
-
-- Connects to Microsoft Graph and Exchange Online with a Service Principal and certificate (PFX)
-- Allows bulk user management for TAP onboarding
-- Adds users to a specified group before TAP is created
-- Generates Temporary Access Passes (TAP) for users
-- Sends customized email notifications to users with their TAP
-- Visual, interactive status and log reporting
+This guide explains how to allow an Azure AD app registration (service principal) to manage Exchange Online using app-only authentication.  
+**Important:** For role assignments, always use the Object ID from the Enterprise Application (service principal), _not_ the App Registration Object ID.
 
 ---
 
-## Requirements
+## Prerequisites
 
-### 1. Azure AD App Registration
-
-Create an App Registration in Azure AD for the tool to use.
-
-- Go to **Azure Portal > Azure Active Directory > App registrations > New registration**
-- Name: `EXO Migration Manager` (or similar)
-- Supported account types: **Single tenant**
-- Redirect URI: *(leave blank - not needed for app-only)*
-
-**After creation, note:**
-- **Application (client) ID**
-- **Directory (tenant) ID**
+- An **Azure AD app registration** created in the correct tenant.
+- Azure AD and Exchange Online admin privileges.
+- Latest Microsoft Graph and Exchange Online PowerShell modules.
 
 ---
 
-### 2. Certificate Authentication
+## Step-by-Step Instructions
 
-- Generate a self-signed certificate or use an existing one.
-- Upload the **public key (.cer)** to the App Registration (**Certificates & secrets > Certificates**).
-- The tool requires the **private key (.pfx)** and password.
+### 1. Find the IDs You Need
 
----
+- **Application (client) ID:**  
+  Azure AD → App Registrations → Your App → Overview → "Application (client) ID"
 
-### 3. API Permissions
+- **Enterprise Application (Service Principal) Object ID:**  
+  Azure AD → Enterprise Applications → Your App → Overview → "Object ID"  
+  > **Use this Object ID for Exchange Online role assignment—not the App Registration's Object ID!**
 
-#### Microsoft Graph - Application Permissions
+### 2. Confirm Service Principal Exists in Tenant
 
-Grant these permissions (admin consent required):
+Open PowerShell and connect to Microsoft Graph:
 
-| Permission Name                          | Type        | Description                           |
-|------------------------------------------|-------------|---------------------------------------|
-| GroupMember.ReadWrite.All                | Application | Read and write all group memberships  |
-| User.Read.All                            | Application | Read all users’ full profiles         |
-| UserAuthenticationMethod.ReadWrite.All   | Application | Read and write all users' auth methods|
-| Mail.Send                                | Application | Send mail as any user                 |
-| Policy.Read.All                          | Application | Read your organization's policies     |
+```powershell
+Connect-MgGraph -TenantId <your-tenant-id>
+Get-MgServicePrincipal -Filter "AppId eq '<your-app-client-id>'"
+```
 
-#### Exchange Online - Application Permissions
+- If the service principal exists, note the **Object ID** returned.
+- If not, create it:
+    ```powershell
+    New-MgServicePrincipal -AppId <your-app-client-id>
+    ```
 
-Grant these permissions (admin consent required):
+### 3. Register the Service Principal in Exchange Online
 
-| Permission Name         | Type        | Description                           |
-|------------------------|-------------|---------------------------------------|
-| Exchange.ManageAsApp   | Application | Manage Exchange as Application        |
-| Mailbox.Migration      | Application | Move mailboxes between organizations  |
+Use **Windows PowerShell** (not PowerShell Core):
 
-- After adding, **click "Grant admin consent"** for your tenant.
+```powershell
+Connect-ExchangeOnline
+New-ServicePrincipal -AppId <your-app-client-id> -ServiceId <enterprise-app-object-id>
+```
 
----
+### 4. Add the Service Principal to "Organization Management" Role Group
 
-### 4. Role Assignments
+```powershell
+Add-RoleGroupMember -Identity "Organization Management" -Member <enterprise-app-object-id>
+```
 
-#### Add App to "Organization Management" Role
+> You can also use the Application (client) ID as the member, but the **Enterprise Application Object ID** is preferred and most reliable.
 
-- Go to **Exchange Admin Center > Permissions > Admin Roles**
-- Edit the **Organization Management** role
-- Add your **App Registration (Service Principal)** as a member
+### 5. Verify Assignment
 
-#### Add App as Owner to TAP Group
-
-- Go to **Azure AD > Groups > [Your TAP Group]**
-- Under **Owners**, add your **App Registration**
-- This is essential if group membership is restricted to owners
-
----
-
-### 5. Conditional Access
-
-- Ensure Conditional Access policies do **not** block app-only authentication for the App Registration.
-- Exclude the App from policies requiring MFA, compliant device, or blocking service principals.
-
----
-
-## Usage
-
-1. **Fill in your Tenant Name, App ID, Tenant ID, Certificate Path, and TAP Group ObjectID in the GUI.**
-2. **Connect** - Establishes session with Exchange Online and Microsoft Graph.
-3. **Upload or enter user emails for batch processing.**
-4. **Send TAP** - The app will:
-    - Confirm group ObjectID (visually with log)
-    - Add users to the group (if not already members)
-    - Create TAP for each user
-    - Send customized email with the TAP to each user
+```powershell
+Get-RoleGroupMember -Identity "Organization Management"
+```
+Look for your app's Object ID in the results.
 
 ---
 
 ## Troubleshooting
 
-- Ensure all API permissions are **Application** type and **admin consented**.
-- Conditional Access policies must allow app-only/service principal access.
-- The App must be an **owner** of the group if group membership management is restricted.
-- For dynamic or hybrid groups, membership changes via Graph may not be possible.
-- Check the log window in the app for real-time errors and diagnostics.
+- **Always use the Object ID from Azure AD → Enterprise Applications** for Exchange Online role group membership.
+- If you get a “ServicePrincipalNotFound” error, confirm both IDs are correct and the service principal exists in your tenant.
+- Make sure you are connected to the correct tenant.
+- Role assignments may take a few minutes to propagate.
 
 ---
 
-## Security
+## Example Values
 
-- Keep your certificate files (.pfx) and passwords secure.
-- Rotate certificates periodically and remove unused ones from Azure.
-
----
-
-## Licensing
-
-Licensed under the MIT License.
+| Value                  | Example                                       |
+|------------------------|-----------------------------------------------|
+| Display Name           | Migration Manager                             |
+| Application (client) ID| 95b0f7c3-1f74-423c-9b50-7e1cf5b29eb5          |
+| Object ID (Enterprise) | 7dff0036-05e0-4509-bb1b-71402c76643c          |
+| Directory (tenant) ID  | 74214193-01af-4cfe-9128-afdb4346dd3f          |
 
 ---
 
-## Author
+## Common Mistakes
 
-Andrew Kemp  
-[GitHub: andrew-kemp](https://github.com/andrew-kemp)# MigrationManager
+- **Do NOT use the App Registration's Object ID** for Exchange Online role assignment—use the Enterprise App Object ID.
+- Make sure you are using **Windows PowerShell** and the latest ExchangeOnlineManagement module.
+- If adding the member with `Add-RoleGroupMember` fails, double-check the Object ID and ensure the SP exists.
+
+---
+
+## References
+
+- [App-only authentication to Exchange Online PowerShell](https://learn.microsoft.com/en-us/powershell/exchange/app-only-auth-powershell-v2?view=exchange-ps)
+- [Microsoft Graph PowerShell Docs](https://aka.ms/graph/sdk/powershell/docs)
