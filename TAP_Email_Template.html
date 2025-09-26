@@ -1,0 +1,30 @@
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .tap { font-size: 1.3em; font-weight: bold; color: #1976d2; }
+    .instructions { margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <p>Dear {FirstName} {LastName},</p>
+  <p>Your Temporary Access Pass (TAP) is:</p>
+  <div class="tap">{TAP}</div>
+  <p>
+    This TAP is <b>valid for up to {TAP_HOURS} hour(s)</b> or until first use, whichever comes first.<br>
+    <i>If your organisation's policy is shorter, it will expire sooner.</i>
+  </p>
+  <div class="instructions">
+    <strong>To set up your Passkey:</strong>
+    <ol>
+      <li>Go to <a href="https://myaccount.microsoft.com/">https://myaccount.microsoft.com/</a> and sign in.</li>
+      <li>Go to <b>Security info</b>.</li>
+      <li>Click <b>Add method</b> and choose <b>Passkey</b>.</li>
+      <li>Enter your TAP code when prompted: <b>{TAP}</b></li>
+      <li>Follow the instructions to set up your Passkey.</li>
+    </ol>
+  </div>
+  <p>If you need assistance, please contact IT support.</p>
+  <p>Best regards,<br/>Your IT Team</p>
+</body>
+</html>
