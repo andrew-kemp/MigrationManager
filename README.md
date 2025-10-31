@@ -47,13 +47,15 @@ Create an App Registration in Microsoft Entra ID for the tool to use.
 
 Grant these permissions (admin consent required):
 
-| Permission Name                          | Type        | Description                           |
-|------------------------------------------|-------------|---------------------------------------|
-| GroupMember.ReadWrite.All                | Application | Read and write all group memberships  |
-| User.Read.All                            | Application | Read all users’ full profiles         |
-| UserAuthenticationMethod.ReadWrite.All   | Application | Read and write all users' auth methods|
-| Mail.Send                                | Application | Send mail as any user                 |
-| Policy.Read.All                          | Application | Read your organization's policies     |
+| Permission Name                     | Type        | Description                                  |
+|-------------------------------------|-------------|----------------------------------------------|
+| GroupMember.ReadWrite.All           | Application | Read and write all group memberships         |
+| User.Read.All                       | Application | Read all users’ full profiles                |
+| UserAuthenticationMethod.ReadWrite.All | Application | Read and write all users' auth methods       |
+| Mail.Send                           | Application | Send mail as any user                        |
+| Policy.Read.All                     | Application | Read your organization's policies            |
+| Device.Read.All                     | Application | Read all device information                  |
+| Device.ReadWrite.All                | Application | Read and write all device information        |
 
 #### Exchange Online - Application Permissions
 
