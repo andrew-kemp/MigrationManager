@@ -1,0 +1,56 @@
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .instructions { margin-top: 18px; }
+    .section { margin-bottom: 24px; }
+    h2 { color: #1976d2; }
+    .logo { text-align: center; margin-bottom: 18px; }
+    .important { color: #d32f2f; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <img src="<link to logo>" alt="Logo" style="max-width:220px; height:auto;">
+  </div>
+
+  <p>Dear {FirstName} {LastName},</p>
+  <p>Your account has been enabled for regular Multi-Factor Authentication (MFA).</p>
+
+  <div class="section">
+    <h2>Important Information</h2>
+    <p class="important">
+      Please ensure you <b>log in using your Cygnet credentials</b> (not NHS credentials) when setting up MFA.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>Step 1: Install Microsoft Authenticator</h2>
+    <p>
+      Please download and install the Microsoft Authenticator app on your mobile device:<br>
+      <b>Android:</b> <a href="https://play.google.com/store/apps/details?id=com.azure.authenticator" target="_blank">Google Play Store</a><br>
+      <b>iPhone:</b> <a href="https://apps.apple.com/app/microsoft-authenticator/id983156458" target="_blank">Apple App Store</a>
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>Step 2: Set Up Your Multi-Factor Authentication</h2>
+    <div class="instructions">
+      <strong>To set up your MFA:</strong>
+      <ol>
+        <li>
+          Go to <a href="https://aka.ms/mfasetup" target="_blank">https://aka.ms/mfasetup</a>
+          <br><span class="important">Log in with your Cygnet credentials (not NHS credentials).</span>
+        </li>
+        <li>Follow the on-screen instructions to complete your MFA setup in the Microsoft Authenticator app (recommended) or via phone.</li>
+      </ol>
+    </div>
+    <p>
+      <b>Tip:</b> If you do not see the "Authenticator app" option, make sure your Microsoft Authenticator app is updated to the latest version.
+    </p>
+  </div>
+
+  <p>If you need assistance, please contact <a href="mailto:{ContactPersonEmail}">{ContactPersonName} ({ContactPersonEmail})</a>.</p>
+  <p>Best regards,<br/>{SenderDisplayName}</p>
+</body>
+</html>
