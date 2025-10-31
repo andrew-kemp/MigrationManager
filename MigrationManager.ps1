@@ -12,11 +12,14 @@ function Write-Ini {
             "last_batch",
             "last_csv_path",
             "tap_group_objectid",
+            "mfa_group_objectid",
             "license_group_objectid",
             "intune_office_group_objectid",
             "SmtpServer",
             "SmtpFrom",
-            "SmtpDisplayName"
+            "SmtpDisplayName",
+            "ContactPersonName",
+            "ContactPersonEmail"
         )) {
             $sb.AppendLine("$k=$($Values[$k])") | Out-Null
         }
@@ -25,11 +28,14 @@ function Write-Ini {
         "last_batch",
         "last_csv_path",
         "tap_group_objectid",
+        "mfa_group_objectid",
         "license_group_objectid",
         "intune_office_group_objectid",
         "SmtpServer",
         "SmtpFrom",
-        "SmtpDisplayName"
+        "SmtpDisplayName",
+        "ContactPersonName",
+        "ContactPersonEmail"
     )) {
         if ($Values[$special]) {
             $sb.AppendLine("$special=$($Values[$special])") | Out-Null
@@ -93,15 +99,18 @@ if (-not $defaults["AppId"])        { $defaults["AppId"]        = "" }
 if (-not $defaults["TenantId"])     { $defaults["TenantId"]     = "" }
 if (-not $defaults["CertPath"])     { $defaults["CertPath"]     = "" }
 if (-not $defaults["tap_group_objectid"]) { $defaults["tap_group_objectid"] = "" }
+if (-not $defaults["mfa_group_objectid"]) { $defaults["mfa_group_objectid"] = "" }
 if (-not $defaults["license_group_objectid"]) { $defaults["license_group_objectid"] = "" }
 if (-not $defaults["intune_office_group_objectid"]) { $defaults["intune_office_group_objectid"] = "" }
 if (-not $defaults["SmtpServer"])   { $defaults["SmtpServer"]   = "" }
 if (-not $defaults["SmtpFrom"])     { $defaults["SmtpFrom"]     = "" }
 if (-not $defaults["SmtpDisplayName"]) { $defaults["SmtpDisplayName"] = "" }
+if (-not $defaults["ContactPersonName"]) { $defaults["ContactPersonName"] = "" }
+if (-not $defaults["ContactPersonEmail"]) { $defaults["ContactPersonEmail"] = "" }
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "EXO/Graph/On-Prem Migration Manager"
-$form.Size = New-Object System.Drawing.Size(700,740)
+$form.Size = New-Object System.Drawing.Size(700,800)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
@@ -299,58 +308,88 @@ $txtTapGroup.Location = New-Object System.Drawing.Point(160,273)
 $txtTapGroup.Size = New-Object System.Drawing.Size(300,20)
 $txtTapGroup.Text = $defaults["tap_group_objectid"]
 
+$lblMfaGroup = New-Object System.Windows.Forms.Label
+$lblMfaGroup.Text = "Regular MFA Group ObjectID:"
+$lblMfaGroup.Location = New-Object System.Drawing.Point(30,305)
+$lblMfaGroup.Size = New-Object System.Drawing.Size(180,20)
+$txtMfaGroup = New-Object System.Windows.Forms.TextBox
+$txtMfaGroup.Location = New-Object System.Drawing.Point(210,303)
+$txtMfaGroup.Size = New-Object System.Drawing.Size(250,20)
+$txtMfaGroup.Text = $defaults["mfa_group_objectid"]
+
 $lblLicenseGroup = New-Object System.Windows.Forms.Label
 $lblLicenseGroup.Text = "License Group ObjectID:"
-$lblLicenseGroup.Location = New-Object System.Drawing.Point(30,305)
+$lblLicenseGroup.Location = New-Object System.Drawing.Point(30,335)
 $lblLicenseGroup.Size = New-Object System.Drawing.Size(150,20)
 
 $txtLicenseGroup = New-Object System.Windows.Forms.TextBox
-$txtLicenseGroup.Location = New-Object System.Drawing.Point(180,303)
+$txtLicenseGroup.Location = New-Object System.Drawing.Point(180,333)
 $txtLicenseGroup.Size = New-Object System.Drawing.Size(280,20)
 $txtLicenseGroup.Text = $defaults["license_group_objectid"]
 
 $lblOfficeGroup = New-Object System.Windows.Forms.Label
 $lblOfficeGroup.Text = "Intune Office Deployment Group GUID:"
-$lblOfficeGroup.Location = New-Object System.Drawing.Point(30,335)
+$lblOfficeGroup.Location = New-Object System.Drawing.Point(30,365)
 $lblOfficeGroup.Size = New-Object System.Drawing.Size(250,20)
 
 $txtOfficeGroup = New-Object System.Windows.Forms.TextBox
-$txtOfficeGroup.Location = New-Object System.Drawing.Point(280,333)
+$txtOfficeGroup.Location = New-Object System.Drawing.Point(280,363)
 $txtOfficeGroup.Size = New-Object System.Drawing.Size(250,20)
 $txtOfficeGroup.Text = $defaults["intune_office_group_objectid"]
 
 $lblSmtpServer = New-Object System.Windows.Forms.Label
 $lblSmtpServer.Text = "SMTP Server:"
-$lblSmtpServer.Location = New-Object System.Drawing.Point(30,365)
+$lblSmtpServer.Location = New-Object System.Drawing.Point(30,395)
 $lblSmtpServer.Size = New-Object System.Drawing.Size(100,20)
 
 $txtSmtpServer = New-Object System.Windows.Forms.TextBox
-$txtSmtpServer.Location = New-Object System.Drawing.Point(140,363)
+$txtSmtpServer.Location = New-Object System.Drawing.Point(140,393)
 $txtSmtpServer.Size = New-Object System.Drawing.Size(260,20)
 $txtSmtpServer.Text = $defaults["SmtpServer"]
 
 $lblSmtpFrom = New-Object System.Windows.Forms.Label
 $lblSmtpFrom.Text = "SMTP From Address:"
-$lblSmtpFrom.Location = New-Object System.Drawing.Point(30,395)
+$lblSmtpFrom.Location = New-Object System.Drawing.Point(30,425)
 $lblSmtpFrom.Size = New-Object System.Drawing.Size(120,20)
 
 $txtSmtpFrom = New-Object System.Windows.Forms.TextBox
-$txtSmtpFrom.Location = New-Object System.Drawing.Point(160,393)
+$txtSmtpFrom.Location = New-Object System.Drawing.Point(160,423)
 $txtSmtpFrom.Size = New-Object System.Drawing.Size(250,20)
 $txtSmtpFrom.Text = $defaults["SmtpFrom"]
 
 $lblSmtpDisplay = New-Object System.Windows.Forms.Label
 $lblSmtpDisplay.Text = "Sender Display Name:"
-$lblSmtpDisplay.Location = New-Object System.Drawing.Point(30,425)
+$lblSmtpDisplay.Location = New-Object System.Drawing.Point(30,455)
 $lblSmtpDisplay.Size = New-Object System.Drawing.Size(130,20)
 
 $txtSmtpDisplay = New-Object System.Windows.Forms.TextBox
-$txtSmtpDisplay.Location = New-Object System.Drawing.Point(170,423)
+$txtSmtpDisplay.Location = New-Object System.Drawing.Point(170,453)
 $txtSmtpDisplay.Size = New-Object System.Drawing.Size(240,20)
 $txtSmtpDisplay.Text = $defaults["SmtpDisplayName"]
 
+# --- Contact Person Section ---
+$lblContactName = New-Object System.Windows.Forms.Label
+$lblContactName.Text = "Contact Person Name:"
+$lblContactName.Location = New-Object System.Drawing.Point(30,485)
+$lblContactName.Size = New-Object System.Drawing.Size(130,20)
+
+$txtContactName = New-Object System.Windows.Forms.TextBox
+$txtContactName.Location = New-Object System.Drawing.Point(170,483)
+$txtContactName.Size = New-Object System.Drawing.Size(240,20)
+$txtContactName.Text = $defaults["ContactPersonName"]
+
+$lblContactEmail = New-Object System.Windows.Forms.Label
+$lblContactEmail.Text = "Contact Person Email:"
+$lblContactEmail.Location = New-Object System.Drawing.Point(30,515)
+$lblContactEmail.Size = New-Object System.Drawing.Size(130,20)
+
+$txtContactEmail = New-Object System.Windows.Forms.TextBox
+$txtContactEmail.Location = New-Object System.Drawing.Point(170,513)
+$txtContactEmail.Size = New-Object System.Drawing.Size(240,20)
+$txtContactEmail.Text = $defaults["ContactPersonEmail"]
+
 $txtStatus = New-Object System.Windows.Forms.TextBox
-$txtStatus.Location = New-Object System.Drawing.Point(20,460)
+$txtStatus.Location = New-Object System.Drawing.Point(20,550)
 $txtStatus.Size = New-Object System.Drawing.Size(650,120)
 $txtStatus.Multiline = $true
 $txtStatus.ScrollBars = "Vertical"
@@ -358,7 +397,7 @@ $txtStatus.ReadOnly = $true
 
 $btnConnect = New-Object System.Windows.Forms.Button
 $btnConnect.Text = "Connect"
-$btnConnect.Location = New-Object System.Drawing.Point(250,590)
+$btnConnect.Location = New-Object System.Drawing.Point(250,700)
 $btnConnect.Size = New-Object System.Drawing.Size(180,38)
 
 $form.Controls.AddRange(@(
@@ -367,11 +406,14 @@ $form.Controls.AddRange(@(
     $lblAppId,$txtAppId,
     $lblTenantId,$txtTenantId,
     $lblTapGroup,$txtTapGroup,
+    $lblMfaGroup,$txtMfaGroup,
     $lblLicenseGroup,$txtLicenseGroup,
     $lblOfficeGroup,$txtOfficeGroup,
     $lblSmtpServer,$txtSmtpServer,
     $lblSmtpFrom,$txtSmtpFrom,
     $lblSmtpDisplay,$txtSmtpDisplay,
+    $lblContactName, $txtContactName,
+    $lblContactEmail, $txtContactEmail,
     $btnConnect,
     $txtStatus
 ))
@@ -382,11 +424,14 @@ $txtTenantName.Add_TextChanged({ $defaults["TenantName"] = $txtTenantName.Text; 
 $txtAppId.Add_TextChanged({ $defaults["AppId"] = $txtAppId.Text; Write-Ini $iniFile $defaults })
 $txtTenantId.Add_TextChanged({ $defaults["TenantId"] = $txtTenantId.Text; Write-Ini $iniFile $defaults })
 $txtTapGroup.Add_TextChanged({ $defaults["tap_group_objectid"] = $txtTapGroup.Text; Write-Ini $iniFile $defaults })
+$txtMfaGroup.Add_TextChanged({ $defaults["mfa_group_objectid"] = $txtMfaGroup.Text; Write-Ini $iniFile $defaults })
 $txtLicenseGroup.Add_TextChanged({ $defaults["license_group_objectid"] = $txtLicenseGroup.Text; Write-Ini $iniFile $defaults })
 $txtOfficeGroup.Add_TextChanged({ $defaults["intune_office_group_objectid"] = $txtOfficeGroup.Text; Write-Ini $iniFile $defaults })
 $txtSmtpServer.Add_TextChanged({ $defaults["SmtpServer"] = $txtSmtpServer.Text; Write-Ini $iniFile $defaults })
 $txtSmtpFrom.Add_TextChanged({ $defaults["SmtpFrom"] = $txtSmtpFrom.Text; Write-Ini $iniFile $defaults })
 $txtSmtpDisplay.Add_TextChanged({ $defaults["SmtpDisplayName"] = $txtSmtpDisplay.Text; Write-Ini $iniFile $defaults })
+$txtContactName.Add_TextChanged({ $defaults["ContactPersonName"] = $txtContactName.Text; Write-Ini $iniFile $defaults })
+$txtContactEmail.Add_TextChanged({ $defaults["ContactPersonEmail"] = $txtContactEmail.Text; Write-Ini $iniFile $defaults })
 
 function Send-SmtpMail {
     param(
@@ -418,21 +463,27 @@ $btnConnect.Add_Click({
     $appId     = $txtAppId.Text.Trim()
     $tenantId  = $txtTenantId.Text.Trim()
     $tapGroup  = $txtTapGroup.Text.Trim()
+    $mfaGroup  = $txtMfaGroup.Text.Trim()
     $licenseGroup = $txtLicenseGroup.Text.Trim()
     $officeGroup = $txtOfficeGroup.Text.Trim()
     $smtpServer = $txtSmtpServer.Text.Trim()
     $smtpFrom = $txtSmtpFrom.Text.Trim()
     $smtpDisplay = $txtSmtpDisplay.Text.Trim()
+    $contactName = $txtContactName.Text.Trim()
+    $contactEmail = $txtContactEmail.Text.Trim()
     if ([string]::IsNullOrWhiteSpace($tenantName) -or [string]::IsNullOrWhiteSpace($appId) -or [string]::IsNullOrWhiteSpace($tenantId)) {
         $txtStatus.Text = "Tenant Name, App ID, and Tenant ID are required."
         return
     }
     $defaults["tap_group_objectid"] = $tapGroup
+    $defaults["mfa_group_objectid"] = $mfaGroup
     $defaults["license_group_objectid"] = $licenseGroup
     $defaults["intune_office_group_objectid"] = $officeGroup
     $defaults["SmtpServer"] = $smtpServer
     $defaults["SmtpFrom"] = $smtpFrom
     $defaults["SmtpDisplayName"] = $smtpDisplay
+    $defaults["ContactPersonName"] = $contactName
+    $defaults["ContactPersonEmail"] = $contactEmail
     Write-Ini $iniFile $defaults
     $exoOrg = "$tenantName.onmicrosoft.com"
     $certPath = $txtPfxPath.Text.Trim()
@@ -483,21 +534,103 @@ $btnConnect.Add_Click({
         $form.Show()
     }
 })
-# ---End of main form ---
-# ----Section 2 ---
-function Is-GroupMember($groupId, $userId) {
-    try {
-        return (Get-MgGroupMember -GroupId $groupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
-    } catch { return $false }
-}
 
+######### Section 2: BATCH PROCESSING FORM & LOGIC #########
 function Show-BatchForm {
     param($iniFile, $logFile, $defaults, $batchToLoad)
 
-    # --- Window & Controls ---
+    # --- Helper: Ensure batch name exists ---
+    function EnsureBatchName {
+        if (-not $txtBatchName.Text.Trim()) {
+            $now = Get-Date -Format "yyyy-MM-dd_HH-mm"
+            $txtBatchName.Text = "MigrationBatch_$now"
+            $defaults["last_batch"] = $txtBatchName.Text
+            Write-Ini $iniFile $defaults
+        }
+        return $txtBatchName.Text.Trim()
+    }
+
+    # --- Helper: Refresh ListView with batch status/info ---
+    function Refresh-ListView {
+        param($batchName)
+        $lstUsers.Items.Clear()
+        $users = @{}
+        if ((Test-Path $logFile) -and $batchName) {
+            foreach ($line in Get-Content $logFile) {
+                $parts = $line -split ","
+                if ($parts.Count -ge 9 -and $parts[1] -eq $batchName) {
+                    $users[$parts[2]] = $true
+                }
+            }
+        }
+        $tapGroupId     = $defaults["tap_group_objectid"]
+        $licenseGroupId = $defaults["license_group_objectid"]
+        $officeGroupId  = $defaults["intune_office_group_objectid"]
+
+        foreach ($email in $users.Keys) {
+            $userObj = $null
+            try { $userObj = Get-MgUser -UserId $email -ErrorAction Stop }
+            catch { try { $userObj = Get-MgUser -Filter "mail eq '$email'" -ErrorAction Stop } catch { $userObj = $null } }
+            $userId = $null
+            if ($userObj) { $userId = $userObj.Id }
+
+            $addedToGroup = "No"
+            if ($tapGroupId -and $userId -and (Is-GroupMember $tapGroupId $userId)) { $addedToGroup = "Yes" }
+            $licensed = "No"
+            if ($licenseGroupId -and $userId -and (Is-GroupMember $licenseGroupId $userId)) { $licensed = "Yes" }
+            $officeDeployed = "No"
+            if ($officeGroupId -and $userId -and (Is-GroupMember $officeGroupId $userId)) { $officeDeployed = "Yes" }
+            $tapSet  = $addedToGroup
+            $tapSent = $addedToGroup
+
+            $migrationStatus = "Not Started"
+            $mailStatusIsCompleted = $false
+            try {
+                $moveReq = Get-MoveRequest -Identity $email -ErrorAction Stop
+                if ($moveReq.Status) { $migrationStatus = $moveReq.Status }
+                if ($migrationStatus -eq "Completed") { $mailStatusIsCompleted = $true }
+            } catch {
+                try {
+                    $mbx = Get-Mailbox -Identity $email -ErrorAction Stop
+                    if ($mbx.RecipientTypeDetails -like "*MailUser*") {
+                        $migrationStatus = "Not Started"
+                    } else {
+                        $migrationStatus = "Completed"
+                        $mailStatusIsCompleted = $true
+                    }
+                } catch {
+                    $migrationStatus = "Not Started"
+                }
+            }
+
+            $status = "Not Started"
+            if ($mailStatusIsCompleted -or $migrationStatus -eq "Completed") {
+                $status = "Completed"
+            } elseif (
+                $tapSent -eq "Yes" -or
+                $licensed -eq "Yes" -or
+                $officeDeployed -eq "Yes" -or
+                ($migrationStatus -ne "Not Started" -and $migrationStatus -ne "" -and $migrationStatus -ne $null -and $migrationStatus -ne "Completed")
+            ) {
+                $status = "In Progress"
+            }
+
+            $item = New-Object System.Windows.Forms.ListViewItem ($email)
+            $item.SubItems.Add($status) | Out-Null
+            $item.SubItems.Add($addedToGroup) | Out-Null
+            $item.SubItems.Add($tapSet) | Out-Null
+            $item.SubItems.Add($tapSent) | Out-Null
+            $item.SubItems.Add($licensed) | Out-Null
+            $item.SubItems.Add($officeDeployed) | Out-Null
+            $item.SubItems.Add($migrationStatus) | Out-Null
+            $lstUsers.Items.Add($item)
+        }
+    }
+
+    # --- Main Window & Controls ---
     $batchForm = New-Object System.Windows.Forms.Form
     $batchForm.Text = "User Migration Batch"
-    $batchForm.Size = New-Object System.Drawing.Size(1120, 950)
+    $batchForm.Size = New-Object System.Drawing.Size(1120, 1000)
     $batchForm.StartPosition = "CenterScreen"
     $batchForm.FormBorderStyle = "FixedDialog"
     $batchForm.MaximizeBox = $false
@@ -570,291 +703,283 @@ function Show-BatchForm {
     $lstUsers.HideSelection = $false
     $lstUsers.GridLines = $true
 
+    # --- Batch Loader Panel ---
+    $panelBatchLoader = New-Object System.Windows.Forms.Panel
+    $panelBatchLoader.Location = New-Object System.Drawing.Point(20, 570)
+    $panelBatchLoader.Size = New-Object System.Drawing.Size(540, 40)
+
     $lblChooseBatch = New-Object System.Windows.Forms.Label
     $lblChooseBatch.Text = "Load Existing Batch:"
-    $lblChooseBatch.Location = New-Object System.Drawing.Point(20, 660)
+    $lblChooseBatch.Location = New-Object System.Drawing.Point(0, 10)
     $lblChooseBatch.Size = New-Object System.Drawing.Size(130, 20)
+
     $cmbBatches = New-Object System.Windows.Forms.ComboBox
-    $cmbBatches.Location = New-Object System.Drawing.Point(160, 658)
+    $cmbBatches.Location = New-Object System.Drawing.Point(140, 8)
     $cmbBatches.Size = New-Object System.Drawing.Size(250, 22)
     $cmbBatches.DropDownStyle = "DropDownList"
     $cmbBatches.Items.Clear()
+
+    # Build a mapping of batch technical names to friendly names
+    $batchNameToFriendly = @{}
+    foreach ($key in $defaults.Keys) {
+        if ($key -like "batch_friendlyname_*") {
+            $batchId = $key.Substring(19)
+            $batchNameToFriendly[$batchId] = $defaults[$key]
+        }
+    }
     $allBatchNames = @(Get-Content $logFile | ForEach-Object { ($_ -split ",")[1] }) | Select-Object -Unique
-    foreach ($b in $allBatchNames) { if($b){ $cmbBatches.Items.Add($b) } }
+    foreach ($b in $allBatchNames) {
+        $friendly = $batchNameToFriendly[$b]
+        if ($b) {
+            if ($friendly) {
+                $cmbBatches.Items.Add("$b ($friendly)")
+            } else {
+                $cmbBatches.Items.Add($b)
+            }
+        }
+    }
+
     $btnLoadBatch = New-Object System.Windows.Forms.Button
     $btnLoadBatch.Text = "Load"
-    $btnLoadBatch.Location = New-Object System.Drawing.Point(420, 656)
+    $btnLoadBatch.Location = New-Object System.Drawing.Point(400, 6)
     $btnLoadBatch.Size = New-Object System.Drawing.Size(100, 24)
+
+    $panelBatchLoader.Controls.AddRange(@($lblChooseBatch, $cmbBatches, $btnLoadBatch))
 
     $lblBatch = New-Object System.Windows.Forms.Label
     $lblBatch.Text = "Batch Name:"
-    $lblBatch.Location = New-Object System.Drawing.Point(20, 700)
+    $lblBatch.Location = New-Object System.Drawing.Point(20, 620)
     $lblBatch.Size = New-Object System.Drawing.Size(120, 20)
     $txtBatchName = New-Object System.Windows.Forms.TextBox
-    $txtBatchName.Location = New-Object System.Drawing.Point(140, 697)
+    $txtBatchName.Location = New-Object System.Drawing.Point(140, 617)
     $txtBatchName.Size = New-Object System.Drawing.Size(350, 24)
     $txtBatchName.ReadOnly = $false
 
     $btnGenBatch = New-Object System.Windows.Forms.Button
     $btnGenBatch.Text = "Generate"
-    $btnGenBatch.Location = New-Object System.Drawing.Point(510, 697)
+    $btnGenBatch.Location = New-Object System.Drawing.Point(510, 617)
     $btnGenBatch.Size = New-Object System.Drawing.Size(100, 24)
     $btnGenBatch.Add_Click({
         $now = Get-Date -Format "yyyy-MM-dd_HH-mm"
         $txtBatchName.Text = "MigrationBatch_$now"
     })
 
-    $lblSaved = New-Object System.Windows.Forms.Label
-    $lblSaved.Text = ""
-    $lblSaved.Location = New-Object System.Drawing.Point(20, 890)
-    $lblSaved.Size = New-Object System.Drawing.Size(950, 20)
+    # --- Batch Friendly Name ---
+    $lblBatchFriendly = New-Object System.Windows.Forms.Label
+    $lblBatchFriendly.Text = "Batch Friendly Name:"
+    $lblBatchFriendly.Location = New-Object System.Drawing.Point(20, 660)
+    $lblBatchFriendly.Size = New-Object System.Drawing.Size(150, 20)
 
-    # --- Step Checkboxes ---
+    $txtBatchFriendly = New-Object System.Windows.Forms.TextBox
+    $txtBatchFriendly.Location = New-Object System.Drawing.Point(180, 657)
+    $txtBatchFriendly.Size = New-Object System.Drawing.Size(310, 24)
+
+    $btnRenameBatch = New-Object System.Windows.Forms.Button
+    $btnRenameBatch.Text = "Rename Batch"
+    $btnRenameBatch.Location = New-Object System.Drawing.Point(510, 657)
+    $btnRenameBatch.Size = New-Object System.Drawing.Size(100, 24)
+    $btnRenameBatch.Add_Click({
+        $oldBatchName = $txtBatchName.Text.Trim()
+        $newFriendlyName = $txtBatchFriendly.Text.Trim()
+        if ($oldBatchName -and $newFriendlyName) {
+            # Update friendly name mapping
+            $defaults["batch_friendlyname_$oldBatchName"] = $newFriendlyName
+            Write-Ini $iniFile $defaults
+
+            # Update batch dropdown with new friendly name
+            $cmbBatches.Items.Clear()
+            $batchNameToFriendly = @{}
+            foreach ($key in $defaults.Keys) {
+                if ($key -like "batch_friendlyname_*") {
+                    $batchId = $key.Substring(19)
+                    $batchNameToFriendly[$batchId] = $defaults[$key]
+                }
+            }
+            $allBatchNames = @(Get-Content $logFile | ForEach-Object { ($_ -split ",")[1] }) | Select-Object -Unique
+            foreach ($b in $allBatchNames) {
+                $friendly = $batchNameToFriendly[$b]
+                if ($b) {
+                    if ($friendly) {
+                        $cmbBatches.Items.Add("$b ($friendly)")
+                    } else {
+                        $cmbBatches.Items.Add($b)
+                    }
+                }
+            }
+            $lblSaved.Text = "Batch $oldBatchName renamed to: $newFriendlyName"
+        }
+    })
+
+    # --- Auth Method GroupBox ---
+    $gbAuthMethod = New-Object System.Windows.Forms.GroupBox
+    $gbAuthMethod.Text = "Authentication Method"
+    $gbAuthMethod.Location = New-Object System.Drawing.Point(20, 700)
+    $gbAuthMethod.Size = New-Object System.Drawing.Size(340, 60)
+
+    $rbTAP = New-Object System.Windows.Forms.RadioButton
+    $rbTAP.Text = "Passkey (TAP/Passkey)"
+    $rbTAP.Location = New-Object System.Drawing.Point(15, 25)
+    $rbTAP.Size = New-Object System.Drawing.Size(150, 22)
+
+    $rbMFA = New-Object System.Windows.Forms.RadioButton
+    $rbMFA.Text = "Regular MFA"
+    $rbMFA.Location = New-Object System.Drawing.Point(180, 25)
+    $rbMFA.Size = New-Object System.Drawing.Size(120, 22)
+    $rbMFA.Checked = $true      # Default
+
+    $gbAuthMethod.Controls.AddRange(@($rbTAP, $rbMFA))
+
+    # --- Device Entry for Office Deployment ---
+    $lblDeviceEntry = New-Object System.Windows.Forms.Label
+    $lblDeviceEntry.Text = "Device Name for Office Deployment:"
+    $lblDeviceEntry.Location = New-Object System.Drawing.Point(400, 700)
+    $lblDeviceEntry.Size = New-Object System.Drawing.Size(240, 20)
+
+    $txtDeviceEntry = New-Object System.Windows.Forms.TextBox
+    $txtDeviceEntry.Location = New-Object System.Drawing.Point(400, 730)
+    $txtDeviceEntry.Size = New-Object System.Drawing.Size(340, 24)
+
+    $btnDeployOffice = New-Object System.Windows.Forms.Button
+    $btnDeployOffice.Text = "Deploy Office to Device"
+    $btnDeployOffice.Location = New-Object System.Drawing.Point(760, 730)
+    $btnDeployOffice.Size = New-Object System.Drawing.Size(180, 28)
+
+    # --- Migration Steps GroupBox ---
+    $gbMigrationSteps = New-Object System.Windows.Forms.GroupBox
+    $gbMigrationSteps.Text = "Migration Steps"
+    $gbMigrationSteps.Location = New-Object System.Drawing.Point(20, 770)
+    $gbMigrationSteps.Size = New-Object System.Drawing.Size(600, 60)
+
     $chkSendTAP = New-Object System.Windows.Forms.CheckBox
     $chkSendTAP.Text = "Send TAP"
-    $chkSendTAP.Location = New-Object System.Drawing.Point(20, 570)
-    $chkSendTAP.Size = New-Object System.Drawing.Size(120, 22)
-    $chkSendTAP.Checked = $true
+    $chkSendTAP.Location = New-Object System.Drawing.Point(20, 25)
+    $chkSendTAP.Size = New-Object System.Drawing.Size(110, 22)
+    $chkSendTAP.Checked = $false
+
     $chkLicenseUser = New-Object System.Windows.Forms.CheckBox
     $chkLicenseUser.Text = "License User"
-    $chkLicenseUser.Location = New-Object System.Drawing.Point(160, 570)
-    $chkLicenseUser.Size = New-Object System.Drawing.Size(120, 22)
-    $chkLicenseUser.Checked = $true
-    $chkDeployOffice = New-Object System.Windows.Forms.CheckBox
-    $chkDeployOffice.Text = "Deploy Office"
-    $chkDeployOffice.Location = New-Object System.Drawing.Point(300, 570)
-    $chkDeployOffice.Size = New-Object System.Drawing.Size(120, 22)
-    $chkDeployOffice.Checked = $true
+    $chkLicenseUser.Location = New-Object System.Drawing.Point(140, 25)
+    $chkLicenseUser.Size = New-Object System.Drawing.Size(110, 22)
+    $chkLicenseUser.Checked = $false
+
     $chkMigrateMailbox = New-Object System.Windows.Forms.CheckBox
     $chkMigrateMailbox.Text = "Migrate Mailbox"
-    $chkMigrateMailbox.Location = New-Object System.Drawing.Point(440, 570)
-    $chkMigrateMailbox.Size = New-Object System.Drawing.Size(140, 22)
+    $chkMigrateMailbox.Location = New-Object System.Drawing.Point(260, 25)
+    $chkMigrateMailbox.Size = New-Object System.Drawing.Size(120, 22)
     $chkMigrateMailbox.Checked = $false
+
     $chkCompleteMailbox = New-Object System.Windows.Forms.CheckBox
     $chkCompleteMailbox.Text = "Complete Mailbox"
-    $chkCompleteMailbox.Location = New-Object System.Drawing.Point(600, 570)
-    $chkCompleteMailbox.Size = New-Object System.Drawing.Size(140, 22)
+    $chkCompleteMailbox.Location = New-Object System.Drawing.Point(390, 25)
+    $chkCompleteMailbox.Size = New-Object System.Drawing.Size(130, 22)
     $chkCompleteMailbox.Checked = $false
+
+    $gbMigrationSteps.Controls.AddRange(@($chkSendTAP, $chkLicenseUser, $chkMigrateMailbox, $chkCompleteMailbox))
 
     $btnApply = New-Object System.Windows.Forms.Button
     $btnApply.Text = "Apply Selected Tasks"
-    $btnApply.Location = New-Object System.Drawing.Point(760, 570)
+    $btnApply.Location = New-Object System.Drawing.Point(650, 790)
     $btnApply.Size = New-Object System.Drawing.Size(150, 32)
     $btnResendTAP = New-Object System.Windows.Forms.Button
     $btnResendTAP.Text = "Re-Send TAP"
-    $btnResendTAP.Location = New-Object System.Drawing.Point(930, 570)
+    $btnResendTAP.Location = New-Object System.Drawing.Point(820, 790)
     $btnResendTAP.Size = New-Object System.Drawing.Size(120, 32)
+
+    $lblSaved = New-Object System.Windows.Forms.Label
+    $lblSaved.Text = ""
+    $lblSaved.Location = New-Object System.Drawing.Point(20, 840)
+    $lblSaved.Size = New-Object System.Drawing.Size(950, 20)
+
+    # --- Enable Send TAP only when Passkey is selected ---
+    $chkSendTAP.Enabled = $rbTAP.Checked
+    $rbTAP.Add_CheckedChanged({
+        $chkSendTAP.Enabled = $rbTAP.Checked
+    })
+    $rbMFA.Add_CheckedChanged({
+        $chkSendTAP.Enabled = $rbTAP.Checked
+    })
 
     $batchForm.Controls.AddRange(@(
         $lblEndpoint, $cmbEndpoint,
         $btnRemoveUser, $btnClearBatch, $btnNewBatch, $btnUploadCSV, $btnAddUsers, $btnRefreshList,
         $lblUsers, $lstUsers,
-        $chkSendTAP, $chkLicenseUser, $chkDeployOffice, $chkMigrateMailbox, $chkCompleteMailbox,
+        $panelBatchLoader,
+        $lblBatch, $txtBatchName, $btnGenBatch,
+        $lblBatchFriendly, $txtBatchFriendly, $btnRenameBatch,
+        $gbAuthMethod,
+        $lblDeviceEntry, $txtDeviceEntry, $btnDeployOffice,
+        $gbMigrationSteps,
         $btnApply, $btnResendTAP,
-        $lblSaved, $lblChooseBatch, $cmbBatches, $btnLoadBatch,
-        $lblBatch, $txtBatchName, $btnGenBatch
+        $lblSaved
     ))
 
-    function EnsureBatchName {
-        if (-not $txtBatchName.Text.Trim()) {
-            $now = Get-Date -Format "yyyy-MM-dd_HH-mm"
-            $txtBatchName.Text = "MigrationBatch_$now"
-            $defaults["last_batch"] = $txtBatchName.Text
-            Write-Ini $iniFile $defaults
+
+    # --- Device Deploy Office Button Handler ---
+    $btnDeployOffice.Add_Click({
+        $officeGroupId = $defaults["intune_office_group_objectid"]
+        $deviceName = $txtDeviceEntry.Text.Trim()
+        if (-not $deviceName) {
+            [System.Windows.Forms.MessageBox]::Show("Enter a device name to deploy Office.")
+            return
         }
-        return $txtBatchName.Text.Trim()
-    }
+        $progressForm = New-Object System.Windows.Forms.Form
+        $progressForm.Text = "Office Deployment Progress"
+        $progressForm.Size = New-Object System.Drawing.Size(650,300)
+        $txtProgress = New-Object System.Windows.Forms.TextBox
+        $txtProgress.Multiline = $true
+        $txtProgress.ScrollBars = "Vertical"
+        $txtProgress.ReadOnly = $true
+        $txtProgress.Dock = "Fill"
+        $progressForm.Controls.Add($txtProgress)
+        $progressForm.Show()
 
-    function Refresh-ListView {
-        param($batchName)
-        $lstUsers.Items.Clear()
-        $users = @{}
-        if ((Test-Path $logFile) -and $batchName) {
-            foreach ($line in Get-Content $logFile) {
-                $parts = $line -split ","
-                if ($parts.Count -ge 9 -and $parts[1] -eq $batchName) {
-                    $users[$parts[2]] = $true
-                }
-            }
+        # Find devices by name, sort by lastCheckInDateTime (newest first)
+        try {
+            $devices = Get-MgDevice -All | Where-Object { $_.displayName -like "*$deviceName*" }
+        } catch { $devices = @() }
+        if (-not $devices -or $devices.Count -eq 0) {
+            $txtProgress.AppendText("No device found for '$deviceName'.`r`n")
+            return
         }
-        $tapGroupId     = $defaults["tap_group_objectid"]
-        $licenseGroupId = $defaults["license_group_objectid"]
-        $officeGroupId  = $defaults["intune_office_group_objectid"]
+        $sorted = $devices | Sort-Object -Property lastCheckInDateTime -Descending
+        $newest = $sorted | Select-Object -First 1
+        $oldDevices = $sorted | Select-Object -Skip 1
 
-        foreach ($email in $users.Keys) {
-            $userObj = $null
-            try { $userObj = Get-MgUser -UserId $email -ErrorAction Stop }
-            catch { try { $userObj = Get-MgUser -Filter "mail eq '$email'" -ErrorAction Stop } catch { $userObj = $null } }
-            $userId = $null
-            if ($userObj) { $userId = $userObj.Id }
-
-            $addedToGroup = "No"
-            if ($tapGroupId -and $userId -and (Is-GroupMember $tapGroupId $userId)) { $addedToGroup = "Yes" }
-            $licensed = "No"
-            if ($licenseGroupId -and $userId -and (Is-GroupMember $licenseGroupId $userId)) { $licensed = "Yes" }
-            $officeDeployed = "No"
-            if ($officeGroupId -and $userId -and (Is-GroupMember $officeGroupId $userId)) { $officeDeployed = "Yes" }
-            $tapSet  = $addedToGroup
-            $tapSent = $addedToGroup
-
-            # --- Improved Mailbox/Migration Status & Status Logic ---
-            $migrationStatus = "Not Started"
-            $mailStatusIsCompleted = $false
-            try {
-                $moveReq = Get-MoveRequest -Identity $email -ErrorAction Stop
-                if ($moveReq.Status) { $migrationStatus = $moveReq.Status }
-                if ($migrationStatus -eq "Completed") { $mailStatusIsCompleted = $true }
-            } catch {
-                # If mailbox is already in EXO, Get-MoveRequest fails, so check with Get-Mailbox
-                try {
-                    $mbx = Get-Mailbox -Identity $email -ErrorAction Stop
-                    if ($mbx.RecipientTypeDetails -like "*MailUser*") {
-                        # It's a remote mailbox, treat as not completed
-                        $migrationStatus = "Not Started"
-                    } else {
-                        # It's a cloud mailbox, treat as completed
-                        $migrationStatus = "Completed"
-                        $mailStatusIsCompleted = $true
-                    }
-                } catch {
-                    # Not found at all
-                    $migrationStatus = "Not Started"
-                }
-            }
-
-            # --- Dynamic Status logic ---
-            $status = "Not Started"
-            if ($mailStatusIsCompleted -or $migrationStatus -eq "Completed") {
-                $status = "Completed"
-            } elseif (
-                $tapSent -eq "Yes" -or
-                $licensed -eq "Yes" -or
-                $officeDeployed -eq "Yes" -or
-                ($migrationStatus -ne "Not Started" -and $migrationStatus -ne "" -and $migrationStatus -ne $null -and $migrationStatus -ne "Completed")
-            ) {
-                $status = "In Progress"
-            }
-
-            $item = New-Object System.Windows.Forms.ListViewItem ($email)
-            $item.SubItems.Add($status) | Out-Null
-            $item.SubItems.Add($addedToGroup) | Out-Null
-            $item.SubItems.Add($tapSet) | Out-Null
-            $item.SubItems.Add($tapSent) | Out-Null
-            $item.SubItems.Add($licensed) | Out-Null
-            $item.SubItems.Add($officeDeployed) | Out-Null
-            $item.SubItems.Add($migrationStatus) | Out-Null
-            $lstUsers.Items.Add($item)
+        $msg = "Devices found for '$deviceName':`r`n"
+        $idx = 1
+        foreach ($dev in $sorted) {
+            $msg += "$idx. ObjectId: $($dev.Id) - LastCheckIn: $($dev.lastCheckInDateTime)`r`n"
+            $idx++
         }
-    }
-
-    # --- Add all your other event handlers here (UpdateStepCheckboxes, Add/Remove/Batch/CSV/Apply/Resend TAP, etc) ---
-    # (Use the detailed handler code from previous completions)
-
-
-    function UpdateStepCheckboxes {
-        $selected = @($lstUsers.SelectedItems)
-        if ($selected.Count -eq 0) {
-            $chkSendTAP.Enabled         = $true
-            $chkSendTAP.Checked         = $true
-            $chkLicenseUser.Enabled     = $true
-            $chkLicenseUser.Checked     = $true
-            $chkDeployOffice.Enabled    = $true
-            $chkDeployOffice.Checked    = $true
-            $chkMigrateMailbox.Enabled  = $true
-            $chkMigrateMailbox.Checked  = $false
-            $chkCompleteMailbox.Enabled = $true   # <--- always enabled
-            $chkCompleteMailbox.Checked = $false
+        $msg += "`r`nAdd the newest device to Office group and remove others from Entra/Intune?"
+        $ans = [System.Windows.Forms.MessageBox]::Show($msg, "Confirm Office Deployment", [System.Windows.Forms.MessageBoxButtons]::YesNo)
+        if ($ans -ne "Yes") {
+            $txtProgress.AppendText("Cancelled by user.`r`n")
             return
         }
 
-        $tapSentAll     = $true
-        $licensedAll    = $true
-        $deployedAll    = $true
-        $migratedAll    = $true
-        $completedAll   = $true
-
-        foreach ($sel in $selected) {
-            $email = $sel.Text
-            $lines = Get-Content $logFile | Where-Object { ($_ -split ",")[2] -eq $email }
-            foreach ($line in $lines) {
-                $parts = $line -split ","
-                if ($parts.Count -ge 9) {
-                    if ($parts[6] -ne "Yes")                                { $tapSentAll   = $false }
-                    if ($parts[7] -ne "Yes")                                { $licensedAll  = $false }
-                    if ($parts[8] -ne "Yes")                                { $deployedAll  = $false }
-                    if ($parts[9] -ne "Queued" -and $parts[9] -ne "Yes")    { $migratedAll  = $false }
-                    if ($parts[9] -ne "Completed")                          { $completedAll = $false }
-                }
-            }
+        # Add newest to Office group
+        try {
+            New-MgGroupMember -GroupId $officeGroupId -DirectoryObjectId $newest.Id -ErrorAction Stop
+            $txtProgress.AppendText("Added device '$deviceName' (ObjectId: $($newest.Id)) to Office group.`r`n")
+        } catch {
+            $txtProgress.AppendText("Error adding device '$deviceName': $($_.Exception.Message)`r`n")
         }
 
-        $chkSendTAP.Enabled         = -not $tapSentAll
-        $chkSendTAP.Checked         = $chkSendTAP.Enabled
-        $chkLicenseUser.Enabled     = -not $licensedAll
-        $chkLicenseUser.Checked     = $chkLicenseUser.Enabled
-        $chkDeployOffice.Enabled    = -not $deployedAll
-        $chkDeployOffice.Checked    = $chkDeployOffice.Enabled
-        $chkMigrateMailbox.Enabled  = (-not $migratedAll) -and (-not $completedAll)
-        $chkMigrateMailbox.Checked  = $chkMigrateMailbox.Enabled
-        $chkCompleteMailbox.Enabled = $true   # <--- always enabled
-        $chkCompleteMailbox.Checked = $chkCompleteMailbox.Checked
-    }
-
-    $lstUsers.Add_SelectedIndexChanged({ UpdateStepCheckboxes })
-    
-    # --- Add User Button Handler ---
-    $btnAddUsers.Add_Click({
-        $addForm = New-Object System.Windows.Forms.Form
-        $addForm.Text = "Add Users"
-        $addForm.Size = New-Object System.Drawing.Size(400,300)
-        $addForm.StartPosition = "CenterParent"
-        $lblAdd = New-Object System.Windows.Forms.Label
-        $lblAdd.Text = "Enter email addresses (comma or line separated):"
-        $lblAdd.Location = New-Object System.Drawing.Point(10,10)
-        $lblAdd.Size = New-Object System.Drawing.Size(370,20)
-        $txtAdd = New-Object System.Windows.Forms.TextBox
-        $txtAdd.Location = New-Object System.Drawing.Point(10,40)
-        $txtAdd.Size = New-Object System.Drawing.Size(360,160)
-        $txtAdd.Multiline = $true
-        $txtAdd.ScrollBars = "Vertical"
-        $btnAdd = New-Object System.Windows.Forms.Button
-        $btnAdd.Text = "Add"
-        $btnAdd.Location = New-Object System.Drawing.Point(150,220)
-        $btnAdd.Size = New-Object System.Drawing.Size(90,32)
-        $lblAdded = New-Object System.Windows.Forms.Label
-        $lblAdded.Text = ""
-        $lblAdded.Location = New-Object System.Drawing.Point(10,200)
-        $lblAdded.Size = New-Object System.Drawing.Size(360,20)
-        $btnAdd.Add_Click({
-            $block = $txtAdd.Text
-            $curBatch = EnsureBatchName
-            $added = 0
-            $users = @{}
-            if ((Test-Path $logFile) -and $curBatch) {
-                foreach ($line in Get-Content $logFile) {
-                    $parts = $line -split ","
-                    if ($parts.Count -ge 9 -and $parts[1] -eq $curBatch) {
-                        $users[$parts[2]] = $true
-                    }
+        # Remove older devices
+        if ($oldDevices.Count -gt 0) {
+            foreach ($dev in $oldDevices) {
+                try {
+                    Remove-MgDevice -DeviceId $dev.Id -ErrorAction Stop
+                    $txtProgress.AppendText("Deleted device ObjectId: $($dev.Id)`r`n")
+                } catch {
+                    $txtProgress.AppendText("Error deleting device ObjectId: $($dev.Id) - $($_.Exception.Message)`r`n")
                 }
             }
-            if ($block -and $curBatch) {
-                $emails = $block -split "[,`n`r]" | ForEach-Object { $_.Trim() } | Where-Object { $_ -and $_ -match "@" }
-                foreach ($e in $emails) {
-                    if (-not $users.ContainsKey($e)) {
-                        $dt = Get-Date -Format "yyyy-MM-dd HH:mm"
-                        $line = "$dt,$curBatch,$e,Not Started,No,No,No,No,No,Not Started"
-                        Add-Content -Path $logFile -Value $line
-                        $added++
-                    }
-                }
-                Refresh-ListView $curBatch
-                $txtAdd.Text = ""
-                $lblAdded.Text = "$added user(s) added to batch $curBatch."
-            }
-        })
-        $addForm.Controls.AddRange(@($lblAdd,$txtAdd,$btnAdd,$lblAdded))
-        [void]$addForm.ShowDialog()
+        } else {
+            $txtProgress.AppendText("No older devices to remove.`r`n")
+        }
+        $txtProgress.AppendText("Office deployment step finished for device '$deviceName'.`r`n")
     })
 
     # --- Upload CSV Handler ---
@@ -931,6 +1056,17 @@ function Show-BatchForm {
         }
     })
 
+    # --- New Batch Handler ---
+    $btnNewBatch.Add_Click({
+        $now = Get-Date -Format "yyyy-MM-dd_HH-mm"
+        $batchName = "MigrationBatch_$now"
+        $txtBatchName.Text = $batchName
+        $defaults["last_batch"] = $batchName
+        Write-Ini $iniFile $defaults
+        $lstUsers.Items.Clear()
+        $lblSaved.Text = "New batch created: $batchName. Add users or upload CSV."
+    })
+
     # --- Load Batch Handler ---
     $btnLoadBatch.Add_Click({
         $selectedBatch = $cmbBatches.SelectedItem
@@ -943,312 +1079,433 @@ function Show-BatchForm {
         }
     })
 
-    # --- New Batch Handler ---
-    $btnNewBatch.Add_Click({
-        $now = Get-Date -Format "yyyy-MM-dd_HH-mm"
-        $batchName = "MigrationBatch_$now"
-        $txtBatchName.Text = $batchName
-        $defaults["last_batch"] = $batchName
-        Write-Ini $iniFile $defaults
-        $lstUsers.Items.Clear()
-        $lblSaved.Text = "New batch created: $batchName. Add users or upload CSV."
+    # --- Add User Button Handler ---
+    $btnAddUsers.Add_Click({
+        $addForm = New-Object System.Windows.Forms.Form
+        $addForm.Text = "Add Users"
+        $addForm.Size = New-Object System.Drawing.Size(400,300)
+        $addForm.StartPosition = "CenterParent"
+        $lblAdd = New-Object System.Windows.Forms.Label
+        $lblAdd.Text = "Enter email addresses (comma or line separated):"
+        $lblAdd.Location = New-Object System.Drawing.Point(10,10)
+        $lblAdd.Size = New-Object System.Drawing.Size(370,20)
+        $txtAdd = New-Object System.Windows.Forms.TextBox
+        $txtAdd.Location = New-Object System.Drawing.Point(10,40)
+        $txtAdd.Size = New-Object System.Drawing.Size(360,160)
+        $txtAdd.Multiline = $true
+        $txtAdd.ScrollBars = "Vertical"
+        $btnAdd = New-Object System.Windows.Forms.Button
+        $btnAdd.Text = "Add"
+        $btnAdd.Location = New-Object System.Drawing.Point(150,220)
+        $btnAdd.Size = New-Object System.Drawing.Size(90,32)
+        $lblAdded = New-Object System.Windows.Forms.Label
+        $lblAdded.Text = ""
+        $lblAdded.Location = New-Object System.Drawing.Point(10,200)
+        $lblAdded.Size = New-Object System.Drawing.Size(360,20)
+        $btnAdd.Add_Click({
+            $block = $txtAdd.Text
+            $curBatch = EnsureBatchName
+            $added = 0
+            $users = @{}
+            if ((Test-Path $logFile) -and $curBatch) {
+                foreach ($line in Get-Content $logFile) {
+                    $parts = $line -split ","
+                    if ($parts.Count -ge 9 -and $parts[1] -eq $curBatch) {
+                        $users[$parts[2]] = $true
+                    }
+                }
+            }
+            if ($block -and $curBatch) {
+                $emails = $block -split "[,`n`r]" | ForEach-Object { $_.Trim() } | Where-Object { $_ -and $_ -match "@" }
+                foreach ($e in $emails) {
+                    if (-not $users.ContainsKey($e)) {
+                        $dt = Get-Date -Format "yyyy-MM-dd HH:mm"
+                        $line = "$dt,$curBatch,$e,Not Started,No,No,No,No,No,Not Started"
+                        Add-Content -Path $logFile -Value $line
+                        $added++
+                    }
+                }
+                Refresh-ListView $curBatch
+                $txtAdd.Text = ""
+                $lblAdded.Text = "$added user(s) added to batch $curBatch."
+            }
+        })
+        $addForm.Controls.AddRange(@($lblAdd,$txtAdd,$btnAdd,$lblAdded))
+        [void]$addForm.ShowDialog()
     })
 
-    # --- (Your $btnApply and $btnResendTAP handlers are already in your previous blocks, so they go here) ---
-# --- Apply Selected Tasks Handler ---
-$btnApply.Add_Click({
-    if ($lstUsers.SelectedItems.Count -eq 0) {
-        [System.Windows.Forms.MessageBox]::Show("Select at least one user to apply actions.")
-        return
-    }
-    $tapGroupId     = $defaults["tap_group_objectid"]
-    $licenseGroupId = $defaults["license_group_objectid"]
-    $officeGroupId  = $defaults["intune_office_group_objectid"]
-    $smtpServer     = $defaults["SmtpServer"]
-    $smtpFrom       = $defaults["SmtpFrom"]
-    $smtpDisplay    = $defaults["SmtpDisplayName"]
-    $templatePath   = "TAP_Email_Template.html"
-    $curBatch       = $txtBatchName.Text
-    $tenantName     = $defaults["TenantName"]
+        # --- Apply Selected Tasks Handler ---
+        $btnApply.Add_Click({
+        if ($lstUsers.SelectedItems.Count -eq 0) {
+            [System.Windows.Forms.MessageBox]::Show("Select at least one user to apply actions.")
+            return
+        }
+        $tapGroupId     = $defaults["tap_group_objectid"]
+        $mfaGroupId     = $defaults["mfa_group_objectid"]
+        $licenseGroupId = $defaults["license_group_objectid"]
+        $smtpServer     = $defaults["SmtpServer"]
+        $smtpFrom       = $defaults["SmtpFrom"]
+        $smtpDisplay    = $defaults["SmtpDisplayName"]
+        $templateTap    = "TAP_Email_Template.html"
+        $templateMfa    = "MFA_Email_Template.html"
+        $cutoverTemplate = "Mailbox_Cutover_Email_Template.html"
+        $curBatch       = $txtBatchName.Text
+        $tenantName     = $defaults["TenantName"]
 
-    # --- Prepare endpoint mapping ---
-    $endpointMap = @{}
-    try {
-        $endpoints = Get-MigrationEndpoint
-        foreach ($ep in $endpoints) {
+        $useTAP = $rbTAP.Checked
+        $useMFA = $rbMFA.Checked
+
+        $endpointMap = @{}
+        try {
+            $endpoints = Get-MigrationEndpoint
+            foreach ($ep in $endpoints) {
             $endpointMap[$ep.Identity] = $ep.RemoteServer
+            }
+        } catch {
+            $endpointMap[$cmbEndpoint.SelectedItem] = $cmbEndpoint.SelectedItem
         }
-    } catch {
-        $endpointMap[$cmbEndpoint.SelectedItem] = $cmbEndpoint.SelectedItem
-    }
-    $selectedEndpointName = $cmbEndpoint.SelectedItem
-    $remoteHostName = $endpointMap[$selectedEndpointName]
-    $targetDeliveryDomain = "$tenantName.mail.onmicrosoft.com"
+        $selectedEndpointName = $cmbEndpoint.SelectedItem
+        $remoteHostName = $endpointMap[$selectedEndpointName]
+        $targetDeliveryDomain = "$tenantName.mail.onmicrosoft.com"
 
-    if ($chkMigrateMailbox.Checked -and $chkMigrateMailbox.Enabled -and -not $Global:ExchangeCreds) {
-        $Global:ExchangeCreds = Get-Credential -Message "Enter on-prem Exchange admin credentials"
-    }
-
-    $progressForm = New-Object System.Windows.Forms.Form
-    $progressForm.Text = "Processing Selected Tasks"
-    $progressForm.Size = New-Object System.Drawing.Size(650,400)
-    $txtProgress = New-Object System.Windows.Forms.TextBox
-    $txtProgress.Multiline = $true
-    $txtProgress.ScrollBars = "Vertical"
-    $txtProgress.ReadOnly = $true
-    $txtProgress.Dock = "Fill"
-    $progressForm.Controls.Add($txtProgress)
-    $progressForm.Show()
-
-    foreach ($sel in $lstUsers.SelectedItems) {
-        $userEmail = $sel.Text
-        $txtProgress.AppendText("Processing $userEmail...`r`n")
-        $userObj = $null
-        try { $userObj = Get-MgUser -UserId $userEmail -ErrorAction Stop }
-        catch { try { $userObj = Get-MgUser -Filter "mail eq '$userEmail'" -ErrorAction Stop } catch { $userObj = $null } }
-        if (-not $userObj) {
-            $txtProgress.AppendText("User $userEmail not found in Entra ID.`r`n")
-            continue
+        if ($chkMigrateMailbox.Checked -and $chkMigrateMailbox.Enabled -and -not $Global:ExchangeCreds) {
+            $Global:ExchangeCreds = Get-Credential -Message "Enter on-prem Exchange admin credentials"
         }
-        $userId = $userObj.Id
-        $addedToGroup = "No"; $tapSet = "No"; $tapSent = "No"; $licensed = "No"; $officeDeployed = "No"; $migrated = "No"; $completed = "No"
-        $status = "Not Started"
-        $lines = Get-Content $logFile
-        $newLines = @()
 
-        # --- TAP Group Membership Check ---
-        if ($chkSendTAP.Checked -and $chkSendTAP.Enabled -and $tapGroupId) {
+        $progressForm = New-Object System.Windows.Forms.Form
+        $progressForm.Text = "Processing Selected Tasks"
+        $progressForm.Size = New-Object System.Drawing.Size(650,400)
+        $txtProgress = New-Object System.Windows.Forms.TextBox
+        $txtProgress.Multiline = $true
+        $txtProgress.ScrollBars = "Vertical"
+        $txtProgress.ReadOnly = $true
+        $txtProgress.Dock = "Fill"
+        $progressForm.Controls.Add($txtProgress)
+        $progressForm.Show()
+
+        # --- TAP/Passkey logic: batch group add and TAP creation ---
+        if ($useTAP -and $tapGroupId) {
+            # Remove selected users from MFA group if present (Cross-validation)
+            foreach ($sel in $lstUsers.SelectedItems) {
+            $userEmail = $sel.Text
+            $userObj = $null
+            try { $userObj = Get-MgUser -UserId $userEmail -ErrorAction Stop }
+            catch { try { $userObj = Get-MgUser -Filter "mail eq '$userEmail'" -ErrorAction Stop } catch { $userObj = $null } }
+            if ($userObj) {
+                $userId = $userObj.Id
+                $inMfaGroup = $false
+                try {
+                $inMfaGroup = (Get-MgGroupMember -GroupId $mfaGroupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
+                } catch {}
+                if ($inMfaGroup) {
+                try {
+                    Remove-MgGroupMemberByRef  -GroupId $mfaGroupId -DirectoryObjectId $userId -ErrorAction Stop
+                    $txtProgress.AppendText("Removed $userEmail from MFA group due to Passkey selection.`r`n")
+                } catch {
+                    $txtProgress.AppendText("Error removing $userEmail from MFA group: $($_.Exception.Message)`r`n")
+                }
+                } else {
+                $txtProgress.AppendText("$userEmail is not a member of MFA group; nothing to remove.`r`n")
+                }
+            }
+            }
+            # Auto-tick Send TAP Checkbox
+            $chkSendTAP.Checked = $true
+
+            $tapResults = @{}
+            foreach ($sel in $lstUsers.SelectedItems) {
+            $userEmail = $sel.Text
+            $userObj = $null
+            try { $userObj = Get-MgUser -UserId $userEmail -ErrorAction Stop }
+            catch { try { $userObj = Get-MgUser -Filter "mail eq '$userEmail'" -ErrorAction Stop } catch { $userObj = $null } }
+            if (-not $userObj) {
+                $txtProgress.AppendText("User $userEmail not found in Entra ID.`r`n")
+                $tapResults[$userEmail] = $false
+                continue
+            }
+            $userId = $userObj.Id
             $alreadyInTapGroup = $false
             try {
                 $alreadyInTapGroup = (Get-MgGroupMember -GroupId $tapGroupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
             } catch { $alreadyInTapGroup = $false }
             if ($alreadyInTapGroup) {
                 $txtProgress.AppendText("User $userEmail is already in TAP group.`r`n")
-                $addedToGroup = "Yes"
+                $tapResults[$userEmail] = $true
             } else {
                 try {
-                    New-MgGroupMember -GroupId $tapGroupId -DirectoryObjectId $userId -ErrorAction Stop
-                    $txtProgress.AppendText("Added $userEmail to TAP group.`r`n")
-                    $addedToGroup = "Yes"
+                New-MgGroupMember -GroupId $tapGroupId -DirectoryObjectId $userId -ErrorAction Stop
+                $txtProgress.AppendText("Added $userEmail to TAP group.`r`n")
+                $tapResults[$userEmail] = $true
                 } catch {
-                    $txtProgress.AppendText("Error adding to TAP group: $($_.Exception.Message)`r`n")
-                    $addedToGroup = "No"
+                $txtProgress.AppendText("Error adding $userEmail to TAP group: $($_.Exception.Message)`r`n")
+                $tapResults[$userEmail] = $false
                 }
             }
+            }
+
+            $txtProgress.AppendText("Waiting 10 seconds for TAP policy to apply to all users...`r`n")
+            Start-Sleep -Seconds 10
+
+            foreach ($sel in $lstUsers.SelectedItems) {
+            $userEmail = $sel.Text
+            if (-not $tapResults[$userEmail]) {
+                $txtProgress.AppendText("Skipping TAP creation for $userEmail (not in TAP group).`r`n")
+                continue
+            }
+            $userObj = $null
+            try { $userObj = Get-MgUser -UserId $userEmail -ErrorAction Stop }
+            catch { try { $userObj = Get-MgUser -Filter "mail eq '$userEmail'" -ErrorAction Stop } catch { $userObj = $null } }
+            if (-not $userObj) { continue }
+            $userId = $userObj.Id
+
+            # --- Check for existing valid TAP ---
+            $existingTap = $null
             $tap = $null
-            $tapCreated = $false
+            $tapValid = $false
             try {
-                $tapMethod = New-MgUserAuthenticationTemporaryAccessPassMethod `
+                $existingTap = Get-MgUserAuthenticationTemporaryAccessPassMethod -UserId $userId -ErrorAction SilentlyContinue
+            } catch { $existingTap = $null }
+            if ($existingTap -and $existingTap.TemporaryAccessPass) {
+                $now = Get-Date
+                if ($existingTap.validityWindowEndDateTime -gt $now) {
+                $tap = $existingTap.TemporaryAccessPass
+                $tapValid = $true
+                $txtProgress.AppendText("User $userEmail already has a valid TAP. Skipping new TAP creation and email.`r`n")
+                }
+            }
+            if (-not $tapValid) {
+                # --- Create TAP with retry ---
+                $tapCreated = $false
+                $maxTries = 10
+                $tryCount = 0
+                $waitSeconds = 20
+                $policyApplies = $false
+                while (-not $policyApplies -and $tryCount -lt $maxTries) {
+                try {
+                    $tapMethod = New-MgUserAuthenticationTemporaryAccessPassMethod `
                     -UserId $userId `
                     -BodyParameter @{lifetimeInMinutes=480; isUsableOnce=$true}
-                $tap = $tapMethod.TemporaryAccessPass
-                $tapCreated = $true
-                $tapSet = "Yes"
-                $txtProgress.AppendText("TAP created for $userEmail.`r`n")
-            } catch {
-                $tapSet = "No"
-                $txtProgress.AppendText("Error creating TAP: $($_.Exception.Message)`r`n")
-            }
-            if ($tapCreated) {
-                $firstName = $userObj.GivenName
-                $lastName = $userObj.Surname
-                if (-not (Test-Path $templatePath)) {
-                    $txtProgress.AppendText("Email template not found: ${templatePath}`r`n")
-                } else {
-                    $html = Get-Content $templatePath -Raw
-                    $html = $html -replace "\{FirstName\}", $firstName
-                    $html = $html -replace "\{LastName\}", $lastName
-                    $html = $html -replace "\{TAP\}", $tap
-                    $html = $html -replace "\{TAP_HOURS\}", 8
-                    $hasCloudMailbox = $false
-                    try {
-                        $mailbox = Get-Mailbox -Identity $userEmail -ErrorAction Stop
-                        if ($mailbox) { $hasCloudMailbox = $true }
-                    } catch { $hasCloudMailbox = $false }
-                    $emailSent = $false
-                    if ($hasCloudMailbox) {
-                        try {
-                            $txtProgress.AppendText("User $userEmail has a cloud mailbox, sending via Graph...`r`n")
-                            Send-MgUserMail -UserId $userId -BodyParameter @{
-                                message = @{
-                                    subject = "Your Temporary Access Pass (TAP) for Passkey Setup"
-                                    body = @{
-                                        contentType = "html"
-                                        content = $html
-                                    }
-                                    toRecipients = @(@{emailAddress = @{address = $userEmail}})
-                                }
-                                saveToSentItems = $false
-                            }
-                            $txtProgress.AppendText("Email sent to $userEmail via Graph.`r`n")
-                            $tapSent = "Yes"
-                            $status = "TAP Sent"
-                            $emailSent = $true
-                        } catch {
-                            $txtProgress.AppendText("Graph send failed for $userEmail, will try SMTP.`r`n")
-                            $emailSent = $false
-                        }
-                    }
-                    if (-not $emailSent) {
-                        $txtProgress.AppendText("Sending TAP to $userEmail via SMTP relay...`r`n")
-                        $sent = Send-SmtpMail -To $userEmail -Subject "Your Temporary Access Pass (TAP) for Passkey Setup" -BodyHtml $html -SmtpServer $smtpServer -From $smtpFrom -DisplayName $smtpDisplay
-                        if ($sent -eq $true) {
-                            $txtProgress.AppendText("SMTP Email sent to $userEmail.`r`n")
-                            $tapSent = "Yes"
-                            $status = "TAP Sent"
-                        } else {
-                            $txtProgress.AppendText(("SMTP error for {0}: {1}`r`n" -f $userEmail, $sent))
-                            $tapSent = "No"
-                            $status = "Failed"
-                        }
+                    $tap = $tapMethod.TemporaryAccessPass
+                    $tapCreated = $true
+                    $policyApplies = $true
+                    $txtProgress.AppendText("TAP created for $userEmail.`r`n")
+                } catch {
+                    if ($_.Exception.Message -like "*UserCredentialPolicy does not allow*") {
+                    $txtProgress.AppendText("Waiting for TAP policy to apply to $userEmail (attempt $($tryCount+1)/$maxTries)...`r`n")
+                    Start-Sleep -Seconds $waitSeconds
+                    $tryCount++
+                    } else {
+                    $txtProgress.AppendText("Error creating TAP: $($_.Exception.Message)`r`n")
+                    break
                     }
                 }
+                }
+                if (-not $policyApplies) {
+                $txtProgress.AppendText("ERROR: TAP policy did not apply after waiting. Please try again later or check policy assignments.`r`n")
+                continue
+                }
             }
-        } elseif ($tapGroupId) {
-            $alreadyInTapGroup = $false
-            try {
-                $alreadyInTapGroup = (Get-MgGroupMember -GroupId $tapGroupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
-            } catch { $alreadyInTapGroup = $false }
-            if ($alreadyInTapGroup) { $addedToGroup = "Yes" }
+            # --- Send TAP email if TAP was created or valid ---
+            if ($tap) {
+                $firstName = $userObj.GivenName
+                $lastName = $userObj.Surname
+                if (-not (Test-Path $templateTap)) {
+                $txtProgress.AppendText("Email template not found: ${templateTap}`r`n")
+                } else {
+                $html = Get-Content $templateTap -Raw
+                $html = $html -replace "\{FirstName\}", $firstName
+                $html = $html -replace "\{LastName\}", $lastName
+                $html = $html -replace "\{TAP\}", $tap
+                $html = $html -replace "\{TAP_HOURS\}", 8
+                $html = $html -replace "\{SenderDisplayName\}", $smtpDisplay
+                $html = $html -replace "\{ContactPersonName\}", $defaults["ContactPersonName"]
+                $html = $html -replace "\{ContactPersonEmail\}", $defaults["ContactPersonEmail"]
+
+                $sent = Send-SmtpMail -To $userEmail -Subject "Your Temporary Access Pass (TAP) for Passkey Setup" -BodyHtml $html -SmtpServer $smtpServer -From $smtpFrom -DisplayName $smtpDisplay
+                if ($sent -eq $true) { $txtProgress.AppendText("TAP email sent to $userEmail.`r`n") }
+                else { $txtProgress.AppendText(("SMTP error for {0}: {1}`r`n" -f $userEmail, $sent)) }
+                }
+            }
+            }
         }
 
-        # --- License Group Membership Check ---
-        if ($chkLicenseUser.Checked -and $chkLicenseUser.Enabled -and $licenseGroupId) {
+        # --- MFA logic: batch removal from TAP if selected, group add/email ---
+        if ($useMFA -and $mfaGroupId) {
+            # Remove selected users from TAP group if present (Cross-validation)
+            foreach ($sel in $lstUsers.SelectedItems) {
+            $userEmail = $sel.Text
+            $userObj = $null
+            try { $userObj = Get-MgUser -UserId $userEmail -ErrorAction Stop }
+            catch { try { $userObj = Get-MgUser -Filter "mail eq '$userEmail'" -ErrorAction Stop } catch { $userObj = $null } }
+            if ($userObj) {
+                $userId = $userObj.Id
+                $inTapGroup = $false
+                try {
+                $inTapGroup = (Get-MgGroupMember -GroupId $tapGroupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
+                } catch {}
+                if ($inTapGroup) {
+                try {
+                    Remove-MgGroupMemberByRef -GroupId $tapGroupId -DirectoryObjectId $userId -ErrorAction Stop
+                    $txtProgress.AppendText("Removed $userEmail from TAP group due to MFA selection.`r`n")
+                } catch {
+                    $txtProgress.AppendText("Error removing $userEmail from TAP group: $($_.Exception.Message)`r`n")
+                }
+                } else {
+                $txtProgress.AppendText("$userEmail is not a member of TAP group; nothing to remove.`r`n")
+                }
+            }
+            }
+
+            foreach ($sel in $lstUsers.SelectedItems) {
+            $userEmail = $sel.Text
+            $userObj = $null
+            try { $userObj = Get-MgUser -UserId $userEmail -ErrorAction Stop }
+            catch { try { $userObj = Get-MgUser -Filter "mail eq '$userEmail'" -ErrorAction Stop } catch { $userObj = $null } }
+            if (-not $userObj) {
+                $txtProgress.AppendText("User $userEmail not found in Entra ID.`r`n")
+                continue
+            }
+            $userId = $userObj.Id
+            $alreadyInMfaGroup = $false
+            try {
+                $alreadyInMfaGroup = (Get-MgGroupMember -GroupId $mfaGroupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
+            } catch { $alreadyInMfaGroup = $false }
+            if ($alreadyInMfaGroup) {
+                $txtProgress.AppendText("User $userEmail is already in Regular MFA group. Skipping MFA email.`r`n")
+            } else {
+                try {
+                New-MgGroupMember -GroupId $mfaGroupId -DirectoryObjectId $userId -ErrorAction Stop
+                $txtProgress.AppendText("Added $userEmail to Regular MFA group.`r`n")
+                } catch {
+                $txtProgress.AppendText("Error adding to Regular MFA group: $($_.Exception.Message)`r`n")
+                }
+                if (Test-Path $templateMfa) {
+                $firstName = $userObj.GivenName
+                $lastName = $userObj.Surname
+                $html = Get-Content $templateMfa -Raw
+                $html = $html -replace "\{FirstName\}", $firstName
+                $html = $html -replace "\{LastName\}", $lastName
+                $html = $html -replace "\{SenderDisplayName\}", $smtpDisplay
+                $html = $html -replace "\{ContactPersonName\}", $defaults["ContactPersonName"]
+                $html = $html -replace "\{ContactPersonEmail\}", $defaults["ContactPersonEmail"]
+                $sent = Send-SmtpMail -To $userEmail -Subject "Your MFA Setup Instructions" -BodyHtml $html -SmtpServer $smtpServer -From $smtpFrom -DisplayName $smtpDisplay
+                if ($sent -eq $true) { $txtProgress.AppendText("MFA email sent to $userEmail.`r`n") }
+                else { $txtProgress.AppendText(("SMTP error for {0}: {1}`r`n" -f $userEmail, $sent)) }
+                } else {
+                $txtProgress.AppendText("MFA email template not found.`r`n")
+                }
+            }
+            }
+        }
+
+        # --- License group logic ---
+        foreach ($sel in $lstUsers.SelectedItems) {
+            $userEmail = $sel.Text
+            $userObj = $null
+            try { $userObj = Get-MgUser -UserId $userEmail -ErrorAction Stop }
+            catch { try { $userObj = Get-MgUser -Filter "mail eq '$userEmail'" -ErrorAction Stop } catch { $userObj = $null } }
+            if (-not $userObj) {
+            $txtProgress.AppendText("User $userEmail not found in Entra ID.`r`n")
+            continue
+            }
+            $userId = $userObj.Id
+
+            if ($chkLicenseUser.Checked -and $licenseGroupId) {
             $alreadyLicensed = $false
             try {
                 $alreadyLicensed = (Get-MgGroupMember -GroupId $licenseGroupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
             } catch { $alreadyLicensed = $false }
             if ($alreadyLicensed) {
                 $txtProgress.AppendText("User $userEmail is already in License group.`r`n")
-                $licensed = "Yes"
             } else {
                 try {
-                    New-MgGroupMember -GroupId $licenseGroupId -DirectoryObjectId $userId -ErrorAction Stop
-                    $txtProgress.AppendText("Added $userEmail to License group.`r`n")
-                    $licensed = "Yes"
+                New-MgGroupMember -GroupId $licenseGroupId -DirectoryObjectId $userId -ErrorAction Stop
+                $txtProgress.AppendText("Added $userEmail to License group.`r`n")
                 } catch {
-                    $txtProgress.AppendText("Error licensing ${userEmail}: $($_.Exception.Message)`r`n")
-                    $licensed = "No"
+                $txtProgress.AppendText("Error licensing ${userEmail}: $($_.Exception.Message)`r`n")
                 }
             }
-        } elseif ($licenseGroupId) {
-            $alreadyLicensed = $false
-            try {
-                $alreadyLicensed = (Get-MgGroupMember -GroupId $licenseGroupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
-            } catch { $alreadyLicensed = $false }
-            if ($alreadyLicensed) { $licensed = "Yes" }
-        }
-
-        # --- Office Group Membership Check ---
-        if ($chkDeployOffice.Checked -and $chkDeployOffice.Enabled -and $officeGroupId) {
-            $alreadyInOffice = $false
-            try {
-                $alreadyInOffice = (Get-MgGroupMember -GroupId $officeGroupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
-            } catch { $alreadyInOffice = $false }
-            if ($alreadyInOffice) {
-                $txtProgress.AppendText("User $userEmail is already in Office Deployment group.`r`n")
-                $officeDeployed = "Yes"
-            } else {
-                try {
-                    New-MgGroupMember -GroupId $officeGroupId -DirectoryObjectId $userId -ErrorAction Stop
-                    $txtProgress.AppendText("Added $userEmail to Office Deployment group.`r`n")
-                    $officeDeployed = "Yes"
-                } catch {
-                    $txtProgress.AppendText("Error adding $userEmail to Office group: $($_.Exception.Message)`r`n")
-                    $officeDeployed = "No"
-                }
             }
-        } elseif ($officeGroupId) {
-            $alreadyInOffice = $false
-            try {
-                $alreadyInOffice = (Get-MgGroupMember -GroupId $officeGroupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
-            } catch { $alreadyInOffice = $false }
-            if ($alreadyInOffice) { $officeDeployed = "Yes" }
-        }
 
-        # --- Migrate Mailbox (no prereqs) ---
-        if ($chkMigrateMailbox.Checked -and $chkMigrateMailbox.Enabled) {
+            # --- Licensing, mailbox migration, etc. ---
+            if ($chkMigrateMailbox.Checked -and $chkMigrateMailbox.Enabled) {
             try {
                 New-MoveRequest -Identity $userEmail `
-                    -Remote `
-                    -RemoteHostName $remoteHostName `
-                    -RemoteCredential $Global:ExchangeCreds `
-                    -TargetDeliveryDomain $targetDeliveryDomain `
-                    -BatchName $curBatch `
-                    -SuspendWhenReadyToComplete `
-                    -ErrorAction Stop
-                $migrated = "Queued"
+                -Remote `
+                -RemoteHostName $remoteHostName `
+                -RemoteCredential $Global:ExchangeCreds `
+                -TargetDeliveryDomain $targetDeliveryDomain `
+                -BatchName $curBatch `
+                -SuspendWhenReadyToComplete `
+                -ErrorAction Stop
                 $txtProgress.AppendText("Started migration for $userEmail using endpoint '$selectedEndpointName' (`$remoteHostName`).`r`n")
             } catch {
                 $txtProgress.AppendText("Error migrating ${userEmail}: $($_.Exception.Message)`r`n")
             }
-        }
+            }
 
-        # --- Complete Mailbox (allowed to click at any time, but will only resume if prereqs met) ---
-        if ($chkCompleteMailbox.Checked -and $chkCompleteMailbox.Enabled) {
-            $tapSentLive = "No"
-            $licensedLive = "No"
-            $officeDeployedLive = "No"
-            if ($tapGroupId -and $userId -and (Is-GroupMember $tapGroupId $userId)) { $tapSentLive = "Yes" }
-            if ($licenseGroupId -and $userId -and (Is-GroupMember $licenseGroupId $userId)) { $licensedLive = "Yes" }
-            if ($officeGroupId -and $userId -and (Is-GroupMember $officeGroupId $userId)) { $officeDeployedLive = "Yes" }
-            if ($tapSentLive -ne "Yes" -or $licensedLive -ne "Yes" -or $officeDeployedLive -ne "Yes") {
-                $txtProgress.AppendText("Cannot complete migration for ${userEmail}: Prerequisites not met (TAP/Licensed/Office).`r`n")
-            } else {
-                try {
-                    Resume-MoveRequest -Identity $userEmail -ErrorAction Stop
-                    $completed = "Completed"
-                    $txtProgress.AppendText("Completed migration for $userEmail.`r`n")
-                } catch {
-                    $txtProgress.AppendText("Error completing migration for ${userEmail}: $($_.Exception.Message)`r`n")
+            # --- Complete Mailbox & Cutover Email: unconditional (no prereq check) ---
+            if ($chkCompleteMailbox.Checked -and $chkCompleteMailbox.Enabled) {
+            $firstName = $userObj.GivenName
+            $lastName = $userObj.Surname
+
+            # Always resolve template file to script directory
+            $scriptFolder    = Split-Path -Parent $MyInvocation.MyCommand.Path
+            $cutoverTemplate = Join-Path $scriptFolder "Mailbox_Cutover_Email_Template.html"
+
+            if (![string]::IsNullOrWhiteSpace($cutoverTemplate) -and (Test-Path $cutoverTemplate)) {
+                $html = Get-Content $cutoverTemplate -Raw
+                $html = $html -replace "\{FirstName\}", $firstName
+                $html = $html -replace "\{LastName\}", $lastName
+                $html = $html -replace "\{SenderDisplayName\}", $smtpDisplay
+                $html = $html -replace "\{ContactPersonName\}", $defaults["ContactPersonName"]
+                $html = $html -replace "\{ContactPersonEmail\}", $defaults["ContactPersonEmail"]
+                $sent = Send-SmtpMail -To $userEmail -Subject "Your Mailbox Migration: Cutover Instructions" -BodyHtml $html -SmtpServer $smtpServer -From $smtpFrom -DisplayName $smtpDisplay
+                if ($sent -eq $true) {
+                $txtProgress.AppendText("Cutover email sent to $userEmail.`r`n")
+                } else {
+                $txtProgress.AppendText(("SMTP error for {0}: {1}`r`n" -f $userEmail, $sent))
                 }
+            } else {
+                $txtProgress.AppendText("Mailbox cutover template not found for $userEmail.`r`n")
+            }
+            $migrationCompleted = $false
+            try {
+                Resume-MoveRequest -Identity $userEmail -ErrorAction Stop -WarningAction SilentlyContinue
+                $txtProgress.AppendText("Completing migration for $userEmail.`r`n")
+                $migrationCompleted = $true
+            } catch {
+                $txtProgress.AppendText("Error completing migration for ${userEmail}: $($_.Exception.Message)`r`n")
+            }
             }
         }
 
-        # --- Update Log for this user ---
-        foreach ($line in $lines) {
-            $parts = $line -split ","
-            if ($parts.Count -ge 9 -and $parts[2] -eq $userEmail -and $parts[1] -eq $curBatch) {
-                $parts[3] = $status
-                $parts[4] = $addedToGroup
-                $parts[5] = $tapSet
-                $parts[6] = $tapSent
-                $parts[7] = $licensed
-                $parts[8] = $officeDeployed
-                if ($completed -eq "Completed") {
-                    $parts[9] = "Completed"
-                } elseif ($migrated -eq "Queued") {
-                    $parts[9] = "Queued"
-                }
-                $newLines += ($parts -join ",")
-            } else {
-                $newLines += $line
-            }
-        }
-        Set-Content $logFile $newLines
+        $txtProgress.AppendText("All done!`r`n")
+        $lblSaved.Text = "Selected tasks applied for selected users."
         Refresh-ListView $curBatch
-        $txtProgress.AppendText("Done for $userEmail.`r`n`r`n")
-    }
-    $txtProgress.AppendText("All done!`r`n")
-    $lblSaved.Text = "Selected tasks applied for selected users."
-    Refresh-ListView $curBatch
-    UpdateStepCheckboxes
-})
+        # Reset all task checkboxes
+        $chkSendTAP.Checked         = $false
+        $chkLicenseUser.Checked     = $false
+        $chkMigrateMailbox.Checked  = $false
+        $chkCompleteMailbox.Checked = $false
+        })
 
-# --- Re-Send TAP Handler ---
+
+    # --- Re-Send TAP Handler (unchanged) ---
 $btnResendTAP.Add_Click({
     if ($lstUsers.SelectedItems.Count -eq 0) {
-        [System.Windows.Forms.MessageBox]::Show("Select at least one user to re-send TAP.")
+        [System.Windows.Forms.MessageBox]::Show("Select at least one user to re-send TAP email.")
         return
     }
-    $tapGroupId   = $defaults["tap_group_objectid"]
-    $smtpServer   = $defaults["SmtpServer"]
-    $smtpFrom     = $defaults["SmtpFrom"]
-    $smtpDisplay  = $defaults["SmtpDisplayName"]
-    $templatePath = "TAP_Email_Template.html"
+
+    $tapGroupId     = $defaults["tap_group_objectid"]
+    $smtpServer     = $defaults["SmtpServer"]
+    $smtpFrom       = $defaults["SmtpFrom"]
+    $smtpDisplay    = $defaults["SmtpDisplayName"]
+    $templateTap    = "TAP_Email_Template.html"
 
     $progressForm = New-Object System.Windows.Forms.Form
-    $progressForm.Text = "Re-Sending TAP"
+    $progressForm.Text = "Re-Sending TAP Emails"
     $progressForm.Size = New-Object System.Drawing.Size(650,300)
     $txtProgress = New-Object System.Windows.Forms.TextBox
     $txtProgress.Multiline = $true
@@ -1260,7 +1517,7 @@ $btnResendTAP.Add_Click({
 
     foreach ($sel in $lstUsers.SelectedItems) {
         $userEmail = $sel.Text
-        $txtProgress.AppendText("Processing $userEmail...`r`n")
+        $txtProgress.AppendText("Re-sending TAP to $userEmail...`r`n")
         $userObj = $null
         try { $userObj = Get-MgUser -UserId $userEmail -ErrorAction Stop }
         catch { try { $userObj = Get-MgUser -Filter "mail eq '$userEmail'" -ErrorAction Stop } catch { $userObj = $null } }
@@ -1269,88 +1526,147 @@ $btnResendTAP.Add_Click({
             continue
         }
         $userId = $userObj.Id
-        $alreadyInTapGroup = $false
-        try {
-            $alreadyInTapGroup = (Get-MgGroupMember -GroupId $tapGroupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
-        } catch { $alreadyInTapGroup = $false }
-        if (-not $alreadyInTapGroup) {
-            try {
-                New-MgGroupMember -GroupId $tapGroupId -DirectoryObjectId $userId -ErrorAction Stop
-                $txtProgress.AppendText("Added $userEmail to TAP group.`r`n")
-            } catch {
-                $txtProgress.AppendText("Error adding to TAP group: $($_.Exception.Message)`r`n")
-            }
-        } else {
-            $txtProgress.AppendText("User $userEmail is already in TAP group.`r`n")
-        }
-        # Always generate a new TAP and send the email
-        $tap = $null
-        $tapCreated = $false
-        try {
-            $tapMethod = New-MgUserAuthenticationTemporaryAccessPassMethod `
-                -UserId $userId `
-                -BodyParameter @{lifetimeInMinutes=480; isUsableOnce=$true}
-            $tap = $tapMethod.TemporaryAccessPass
-            $tapCreated = $true
-            $txtProgress.AppendText("TAP created for $userEmail.`r`n")
-        } catch {
-            $txtProgress.AppendText("Error creating TAP: $($_.Exception.Message)`r`n")
-        }
-        if ($tapCreated) {
-            $firstName = $userObj.GivenName
-            $lastName = $userObj.Surname
-            if (-not (Test-Path $templatePath)) {
-                $txtProgress.AppendText("Email template not found: ${templatePath}`r`n")
-            } else {
-                $html = Get-Content $templatePath -Raw
-                $html = $html -replace "\{FirstName\}", $firstName
-                $html = $html -replace "\{LastName\}", $lastName
-                $html = $html -replace "\{TAP\}", $tap
-                $html = $html -replace "\{TAP_HOURS\}", 8
-                $hasCloudMailbox = $false
-                try {
-                    $mailbox = Get-Mailbox -Identity $userEmail -ErrorAction Stop
-                    if ($mailbox) { $hasCloudMailbox = $true }
-                } catch { $hasCloudMailbox = $false }
-                $emailSent = $false
-                if ($hasCloudMailbox) {
-                    try {
-                        Send-MgUserMail -UserId $userId -BodyParameter @{
-                            message = @{
-                                subject = "Your Temporary Access Pass (TAP) for Passkey Setup"
-                                body = @{
-                                    contentType = "html"
-                                    content = $html
-                                }
-                                toRecipients = @(@{emailAddress = @{address = $userEmail}})
-                            }
-                            saveToSentItems = $false
-                        }
-                        $txtProgress.AppendText("Email sent to $userEmail via Graph.`r`n")
-                        $emailSent = $true
-                    } catch {
-                        $txtProgress.AppendText("Graph send failed for $userEmail, will try SMTP.`r`n")
-                        $emailSent = $false
-                    }
-                }
-                if (-not $emailSent) {
-                    $txtProgress.AppendText("Sending TAP to $userEmail via SMTP relay...`r`n")
-                    $sent = Send-SmtpMail -To $userEmail -Subject "Your Temporary Access Pass (TAP) for Passkey Setup" -BodyHtml $html -SmtpServer $smtpServer -From $smtpFrom -DisplayName $smtpDisplay
-                    if ($sent -eq $true) {
-                        $txtProgress.AppendText("SMTP Email sent to $userEmail.`r`n")
-                    } else {
-                        $txtProgress.AppendText(("SMTP error for {0}: {1}`r`n" -f $userEmail, $sent))
-                    }
-                }
-            }
-        }
-        $txtProgress.AppendText("Done for $userEmail.`r`n`r`n")
-    }
-    $txtProgress.AppendText("All done!`r`n")
-    Refresh-ListView $txtBatchName.Text
-})
 
+        # Get TAP if exists (or create a new one if needed)
+        $tap = $null
+        try {
+            $existingTap = Get-MgUserAuthenticationTemporaryAccessPassMethod -UserId $userId -ErrorAction SilentlyContinue
+            if ($existingTap -and $existingTap.TemporaryAccessPass) {
+                $tap = $existingTap.TemporaryAccessPass
+            }
+        } catch { $tap = $null }
+
+        if (-not $tap) {
+            # If no TAP exists, create a new one
+            try {
+                $tapMethod = New-MgUserAuthenticationTemporaryAccessPassMethod `
+                    -UserId $userId `
+                    -BodyParameter @{lifetimeInMinutes=480; isUsableOnce=$true}
+                $tap = $tapMethod.TemporaryAccessPass
+                $txtProgress.AppendText("New TAP created for $userEmail.`r`n")
+            } catch {
+                $txtProgress.AppendText("Error creating TAP: $($_.Exception.Message)`r`n")
+                continue
+            }
+        }
+
+        $firstName = $userObj.GivenName
+        $lastName = $userObj.Surname
+        if (-not (Test-Path $templateTap)) {
+            $txtProgress.AppendText("Email template not found: ${templateTap}`r`n")
+        } else {
+            $html = Get-Content $templateTap -Raw
+            $html = $html -replace "\{FirstName\}", $firstName
+            $html = $html -replace "\{LastName\}", $lastName
+            $html = $html -replace "\{TAP\}", $tap
+            $html = $html -replace "\{TAP_HOURS\}", 8
+            $html = $html -replace "\{SenderDisplayName\}", $smtpDisplay
+            $html = $html -replace "\{ContactPersonName\}", $defaults["ContactPersonName"]
+            $html = $html -replace "\{ContactPersonEmail\}", $defaults["ContactPersonEmail"]
+            $sent = Send-SmtpMail -To $userEmail -Subject "Your Temporary Access Pass (TAP) for Passkey Setup" -BodyHtml $html -SmtpServer $smtpServer -From $smtpFrom -DisplayName $smtpDisplay
+            if ($sent -eq $true) { $txtProgress.AppendText("TAP email sent to $userEmail.`r`n") }
+            else { $txtProgress.AppendText(("SMTP error for {0}: {1}`r`n" -f $userEmail, $sent)) }
+        }
+    }
+    $txtProgress.AppendText("Re-send TAP finished.`r`n")
+})
 
     [void]$batchForm.ShowDialog()
 }
-  [void]$form.ShowDialog()
+# --- SECTION 3: Helper Functions & Utilities ---
+
+# Check if user is a member of a group
+function Is-GroupMember($groupId, $userId) {
+    try {
+        return (Get-MgGroupMember -GroupId $groupId -All | Where-Object { $_.Id -eq $userId }) -ne $null
+    } catch { return $false }
+}
+
+# Get all devices by name (returns all matching device objects)
+function Get-DevicesByName($deviceName) {
+    try {
+        return Get-MgDevice -Filter "displayName eq '$deviceName'" -ErrorAction SilentlyContinue
+    } catch {
+        return @()
+    }
+}
+
+# Add device to group (returns success/failure)
+function Add-DeviceToGroup($deviceId, $groupId) {
+    try {
+        New-MgGroupMember -GroupId $groupId -DirectoryObjectId $deviceId -ErrorAction Stop
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# Remove device by ObjectID
+function Remove-Device($deviceId) {
+    try {
+        Remove-MgDevice -DeviceId $deviceId -ErrorAction Stop
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# Create TAP for a user and return TAP code
+function Create-TAP($userId) {
+    try {
+        $tapMethod = New-MgUserAuthenticationTemporaryAccessPassMethod `
+            -UserId $userId `
+            -BodyParameter @{lifetimeInMinutes=480; isUsableOnce=$true}
+        return $tapMethod.TemporaryAccessPass
+    } catch {
+        return $null
+    }
+}
+
+# Add user to group (returns success/failure)
+function Add-UserToGroup($userId, $groupId) {
+    try {
+        New-MgGroupMember -GroupId $groupId -DirectoryObjectId $userId -ErrorAction Stop
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# Send email (SMTP)
+function Send-Email($to, $subject, $bodyHtml, $smtpServer, $from, $displayName) {
+    try {
+        $msg = New-Object System.Net.Mail.MailMessage
+        $msg.From = New-Object System.Net.Mail.MailAddress($from, $displayName)
+        $msg.To.Add($to)
+        $msg.Subject = $subject
+        $msg.Body = $bodyHtml
+        $msg.IsBodyHtml = $true
+        $smtp = New-Object System.Net.Mail.SmtpClient($smtpServer)
+        $smtp.Send($msg)
+        return $true
+    } catch {
+        return $_.Exception.Message
+    }
+}
+
+# Get mailbox migration status for a user
+function Get-MailboxMigrationStatus($email) {
+    try {
+        $moveReq = Get-MoveRequest -Identity $email -ErrorAction Stop
+        return $moveReq.Status
+    } catch {
+        try {
+            $mbx = Get-Mailbox -Identity $email -ErrorAction Stop
+            if ($mbx.RecipientTypeDetails -like "*MailUser*") {
+                return "Not Started"
+            } else {
+                return "Completed"
+            }
+        } catch {
+            return "Not Started"
+        }
+    }
+}
+
+[void]$form.ShowDialog()
