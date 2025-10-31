@@ -1,0 +1,79 @@
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .instructions { margin-top: 18px; }
+    .section { margin-bottom: 24px; }
+    h2 { color: #1976d2; }
+    .logo { text-align: center; margin-bottom: 18px; }
+    .important { color: #d32f2f; font-weight: bold; }
+    .steps { margin-left: 24px; }
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <img src="<link to logo>" alt="Logo" style="max-width:220px; height:auto;">
+  </div>
+
+  <p>Dear {FirstName} {LastName},</p>
+  <p>Your mailbox migration is now entering the <b>cutover phase</b>. This is the final step where your mailbox will be switched to the new system.</p>
+
+  <div class="section">
+    <h2>What to Expect</h2>
+    <ul>
+      <li>You will receive a notification in Outlook informing you that an administrator has made a change and that you should restart Outlook.</li>
+      <li>If prompted to sign in again after restarting, <span class="important">log in using your <b>Cygnet email address and password</b> (not NHS credentials).</span></li>
+      <li>After cutover, your email, calendar, and contacts will be available in the new mailbox environment.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Instructions for Desktop Outlook</h2>
+    <div class="instructions">
+      <ol>
+        <li>Close all open Outlook windows.</li>
+        <li>Open Outlook again. If you see a notification about changes made by your administrator, click <b>OK</b> or <b>Restart</b> as prompted.</li>
+        <li>When asked to sign in, use your <b>Cygnet email address</b> and password.</li>
+        <li>Follow the Outlook setup wizard if prompted:
+          <ul>
+            <li>Select <b>Microsoft 365</b> or <b>Exchange</b> account type if asked.</li>
+            <li>If you see multiple accounts, ensure you select your Cygnet account.</li>
+          </ul>
+        </li>
+        <li>Check that your email, calendar, and contacts are present and up to date.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Instructions for Company Mobile Devices</h2>
+    <div class="instructions">
+      <ol>
+        <li>If you have the <b>Email Plus</b> app installed, please <span class="important">remove/uninstall it</span> from your device.</li>
+        <li>If you do <b>not</b> already have the Microsoft Outlook app, please install it:
+          <ul>
+            <li><b>Android:</b> <a href="https://play.google.com/store/apps/details?id=com.microsoft.office.outlook" target="_blank">Google Play Store - Outlook</a></li>
+            <li><b>iPhone:</b> <a href="https://apps.apple.com/app/microsoft-outlook/id951937596" target="_blank">Apple App Store - Outlook</a></li>
+          </ul>
+        </li>
+        <li>Open the Outlook app and add your account:
+          <ul>
+            <li>Tap <b>Add Account</b> (or choose <b>Get Started</b>).</li>
+            <li>Enter your <b>Cygnet email address</b> and password.</li>
+            <li>Follow the wizard steps to complete setup.</li>
+            <li>Allow notifications and permissions if prompted.</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <p>
+    If you have any issues, please contact 
+    <a href="mailto:{ContactPersonEmail}">{ContactPersonName} ({ContactPersonEmail})</a>
+    or 
+    <a href="https://teams.microsoft.com/l/chat/0/0?users=NicholasCrane@cygnethealth.co.uk" target="_blank">start a Teams chat</a>.
+  </p>
+  <p>Best regards,<br/>{SenderDisplayName}</p>
+</body>
+</html>
